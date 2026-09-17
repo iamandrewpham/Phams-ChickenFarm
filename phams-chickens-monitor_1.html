@@ -1,0 +1,1639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#121826">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pham's Chickens Monitor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%94%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0e131d;
+    --surface: #161c29;
+    --surface-2: #202939;
+    --ink: #f2f5f9;
+    --ink-2: #a9b3c3;
+    --ink-3: #6e7a8e;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.2);
+    --accent: #f2c14e;
+    --accent-ink: #1c1300;
+    --accent-soft: #33290f;
+    --good: #45d483;
+    --good-bg: #133123;
+    --warn: #ffa042;
+    --warn-bg: #3b2712;
+    --crit: #ff6b6b;
+    --crit-bg: #3f1c1e;
+    --unk: #8b96a8;
+    --unk-bg: #27303f;
+    --track: #2b3548;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 700; line-height: 1.05; text-wrap: balance; }
+  .num { font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ---------- header ---------- */
+  .top {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: #121826;
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .top .id { min-width: 0; flex: 1; }
+  .top h1 { font-size: 26px; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+  .conn { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+  .conn::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--unk); }
+  .conn.on::before { background: var(--good); }
+  .conn.off::before { background: var(--crit); }
+  .top .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .btn {
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 36px;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.quiet { border-color: transparent; background: transparent; color: var(--ink-2); }
+  .btn.quiet:hover { background: var(--surface-2); }
+  .btn[disabled] { opacity: 0.55; cursor: default; }
+  .btn .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .btn .spin { animation: none; } }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 40px; display: grid; gap: 18px; }
+  section > .eyebrow { margin-bottom: 8px; }
+
+  /* ---------- notices ---------- */
+  .notice {
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .notice strong { font-weight: 600; }
+  .notice.crit { background: var(--crit-bg); border-color: var(--crit); color: var(--ink); }
+  .notice.warn { background: var(--warn-bg); border-color: var(--warn); }
+  .notice.info { background: var(--accent-soft); border-color: transparent; }
+  .notice .ico { font-weight: 700; flex-shrink: 0; width: 20px; text-align: center; }
+  .notice.crit .ico { color: var(--crit); }
+  .notice.warn .ico { color: var(--warn); }
+  .notice .body { flex: 1; min-width: 0; }
+  .notice .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+  /* ---------- summary strip ---------- */
+  .strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (min-width: 720px) { .strip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .stat .k { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  .stat .v { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.1; margin-top: 2px; display: flex; align-items: baseline; gap: 6px; }
+  .stat .v small { font-family: var(--font-body); font-size: 12.5px; font-weight: 500; color: var(--ink-2); }
+  .stat.good .v { color: var(--good); }
+  .stat.warn .v { color: var(--warn); }
+  .stat.crit .v { color: var(--crit); }
+
+  /* ---------- house grid ---------- */
+  .houses { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 540px) { .houses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 960px) { .houses { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .house {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--unk);
+    border-radius: 12px;
+    padding: 12px 14px 12px;
+    box-shadow: var(--shadow);
+    display: grid; gap: 10px;
+    min-width: 0;
+  }
+  .house.good { border-left-color: var(--good); }
+  .house.warn { border-left-color: var(--warn); }
+  .house.crit { border-left-color: var(--crit); }
+  .house header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .house h2 { font-size: 28px; letter-spacing: 0.01em; }
+  .house h2 small { display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--unk-bg); color: var(--unk);
+  }
+  .chip.good { background: var(--good-bg); color: var(--good); }
+  .chip.warn { background: var(--warn-bg); color: var(--warn); }
+  .chip.crit { background: var(--crit-bg); color: var(--crit); }
+  .chip .i { font-size: 11px; }
+
+  .temp { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .temp .big { font-family: var(--font-display); font-size: 46px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; }
+  .temp .big.warn { color: var(--warn); }
+  .temp .big.crit { color: var(--crit); }
+  .temp .deg { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink-2); }
+  .temp .lbl { font-size: 12px; color: var(--ink-3); margin-left: auto; text-align: right; }
+  .temp .none { font-size: 14px; color: var(--ink-3); }
+
+  .range { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-3); }
+  .range .track { position: relative; height: 8px; background: var(--track); border-radius: 4px; overflow: visible; }
+  .range .band { position: absolute; top: 0; bottom: 0; background: var(--good); opacity: 0.35; border-radius: 4px; }
+  .range .dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); border: 2px solid var(--bg); transform: translate(-50%, -50%); box-shadow: 0 0 0 1px var(--line-strong); }
+  .range .dot.out { background: var(--crit); }
+  .range .lim { font-weight: 500; }
+
+  .inputs { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px 8px; }
+  .inputs li { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); }
+  .inputs li.warn { background: var(--warn-bg); }
+  .inputs li.crit { background: var(--crit-bg); }
+  .inputs .k { font-size: 11px; color: var(--ink-2); font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inputs .v { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px; overflow-wrap: anywhere; }
+  .inputs li.good .v { color: var(--good); }
+  .inputs li.warn .v { color: var(--warn); }
+  .inputs li.crit .v { color: var(--crit); }
+  .inputs li.unk .v { color: var(--unk); }
+  .inputs .v .i { font-size: 11px; }
+  /* water-flow row */
+  .inputs li.water { grid-column: 1 / -1; gap: 4px; }
+  .inputs li.water .v { flex-wrap: wrap; row-gap: 1px; }
+  .inputs li.water .v small { font-weight: 500; font-size: 12px; color: var(--ink-2); }
+  .inputs li.water.warn .v small, .inputs li.water.crit .v small { color: inherit; opacity: 0.9; }
+  .wstrip { display: block; width: 100%; height: 10px; border-radius: 3px; margin-top: 3px; }
+  .sx { position: relative; height: 13px; font-size: 10px; color: var(--ink-3); }
+  .sx span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+  .sx span.end { transform: translateX(-100%); }
+  .inputs li.water.crit .sx, .inputs li.water.warn .sx { color: inherit; opacity: 0.85; }
+  .sheet .explain { font-size: 13px; line-height: 1.4; color: var(--ink-2); background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; }
+
+  /* ---------- unit + other ---------- */
+  .unit { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+  .unit .row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  .unit h2 { font-size: 22px; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .kv div { background: var(--surface-2); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+  .kv .k { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+  .kv .v { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+  .kv .v.good { color: var(--good); } .kv .v.warn { color: var(--warn); } .kv .v.crit { color: var(--crit); }
+
+  /* ---------- alarm list ---------- */
+  .alist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .alist li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .alist li .zn { font-weight: 600; flex: 1; min-width: 140px; }
+  .alist li .zd { color: var(--ink-2); font-size: 13px; }
+  .empty { color: var(--ink-3); font-size: 14px; padding: 6px 0; }
+
+  /* ---------- diagnostics ---------- */
+  details { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 8px 12px; color: var(--ink-2); font-size: 13px; }
+  summary { cursor: pointer; font-weight: 500; }
+  details pre { max-height: 360px; overflow: auto; background: var(--surface-2); padding: 10px; border-radius: 8px; font-size: 11.5px; line-height: 1.4; color: var(--ink); }
+
+  footer { text-align: center; padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+  footer .biz { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink); }
+  footer .addr { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+  footer .fine { color: var(--ink-3); font-size: 12px; margin-top: 8px; }
+  footer a { color: inherit; }
+
+  /* ---------- attention flashing ---------- */
+  @keyframes flash-crit {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0), var(--shadow); background-color: var(--surface); }
+    50% { box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.7), 0 0 28px rgba(255, 107, 107, 0.55); background-color: #4a1d21; }
+  }
+  @keyframes flash-warn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 160, 66, 0), var(--shadow); background-color: var(--surface); }
+    50% { box-shadow: 0 0 0 3px rgba(255, 160, 66, 0.55), 0 0 20px rgba(255, 160, 66, 0.35); background-color: #3b2712; }
+  }
+  @keyframes flash-solid-crit {
+    0%, 100% { background-color: var(--crit-bg); color: var(--crit); }
+    50% { background-color: var(--crit); color: #fff; }
+  }
+  @keyframes flash-solid-warn {
+    0%, 100% { background-color: var(--warn-bg); color: var(--warn); }
+    50% { background-color: var(--warn); color: #1c1300; }
+  }
+  @keyframes flash-text-crit { 0%, 100% { color: var(--crit); } 50% { color: #fff; } }
+  .house.crit, .alist li.crit, .stat.crit { animation: flash-crit 1.1s ease-in-out infinite; }
+  .house.warn, .alist li.warn, .stat.warn { animation: flash-warn 1.8s ease-in-out infinite; }
+  .chip.crit, .inputs li.crit, .notice.crit { animation: flash-solid-crit 1.1s ease-in-out infinite; }
+  .chip.warn, .inputs li.warn { animation: flash-solid-warn 1.8s ease-in-out infinite; }
+  .notice.crit .ico, .notice.crit strong { animation: flash-text-crit 1.1s ease-in-out infinite; }
+  .notice.crit { color: var(--ink); }
+  .inputs li.crit .v, .inputs li.warn .v { color: inherit; }
+  .conn.off { animation: flash-text-crit 1.1s ease-in-out infinite; }
+  .temp .big.crit { animation: flash-text-crit 1.1s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .house.crit, .alist li.crit, .stat.crit, .house.warn, .alist li.warn, .stat.warn,
+    .chip.crit, .inputs li.crit, .notice.crit, .chip.warn, .inputs li.warn,
+    .notice.crit .ico, .notice.crit strong, .conn.off, .temp .big.crit { animation: none; }
+    .house.crit, .alist li.crit { box-shadow: 0 0 0 3px var(--crit), var(--shadow); }
+    .house.warn, .alist li.warn { box-shadow: 0 0 0 3px var(--warn), var(--shadow); }
+  }
+
+  /* ---------- clickable readings ---------- */
+  [data-zid] { cursor: pointer; }
+  .temp[data-zid]:hover, .inputs li[data-zid]:hover, .alist li[data-zid]:hover, .kv div[data-zid]:hover { outline: 1px solid var(--line-strong); outline-offset: 2px; border-radius: 8px; }
+  .inputs li[data-zid]:focus-visible, .temp[data-zid]:focus-visible, .alist li[data-zid]:focus-visible { outline: 2px solid var(--accent); }
+  .tap-hint { font-size: 11.5px; color: var(--ink-3); margin-top: -4px; }
+
+  /* ---------- history sheet ---------- */
+  .sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(4, 7, 12, 0.66); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
+  @media (min-width: 720px) { .sheet-bg { align-items: center; padding: 24px; } }
+  .sheet {
+    width: 100%; max-width: 820px; max-height: calc(100% - env(safe-area-inset-top, 0px));
+    background: var(--surface); border: 1px solid var(--line-strong); border-bottom: 0;
+    border-radius: 16px 16px 0 0; box-shadow: var(--shadow);
+    display: grid; grid-auto-rows: auto; gap: 10px;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+  }
+  @media (min-width: 720px) { .sheet { border-radius: 16px; border-bottom: 1px solid var(--line-strong); max-height: 90vh; } }
+  .sheet header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .sheet h2 { font-size: 26px; }
+  .sheet .sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .ranges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ranges button { border: 1px solid var(--line-strong); background: transparent; color: var(--ink-2); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 500; min-height: 32px; }
+  .ranges button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+  .stats div { background: var(--surface-2); border-radius: 8px; padding: 6px 10px; }
+  .stats .k { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+  .stats .v { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.1; }
+  .stats .v.crit { color: var(--crit); } .stats .v.good { color: var(--good); }
+  .chart { position: relative; min-height: 120px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .tip { position: absolute; pointer-events: none; background: #0b1018; color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.35; white-space: nowrap; box-shadow: var(--shadow); transform: translate(-50%, -100%); }
+  .chart .tip b { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+  .chart .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--ink-2); font-size: 14px; padding: 20px; }
+  .chart .msg.crit { color: var(--crit); }
+  .sheet .note { font-size: 12.5px; color: var(--ink-3); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .legend i.band { height: 10px; opacity: 0.35; }
+
+  /* ---------- sign-in gate ---------- */
+  .gate {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(4, 7, 12, 0.62);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .card {
+    width: min(420px, 100%);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 20px 20px 16px;
+    display: grid; gap: 12px;
+  }
+  .card h2 { font-size: 28px; }
+  .card p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+  .field { display: grid; gap: 4px; }
+  .field label { font-size: 12.5px; font-weight: 500; color: var(--ink-2); }
+  .field input[type="text"], .field input[type="password"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 16px;
+  }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink-2); }
+  .check input { margin-top: 3px; }
+  .err { color: var(--crit); font-size: 13.5px; font-weight: 500; }
+  .card .row { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+  .sample-tag { position: sticky; bottom: 0; z-index: 10; text-align: center; padding: 8px 12px; margin-top: 4px; background: var(--warn-bg); color: var(--ink); border-top: 1px solid var(--warn); font-size: 13px; }
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="id">
+    <h1 id="farmName">Pham's Chickens</h1>
+    <div class="meta">
+      <span class="conn" id="conn">Not signed in</span>
+      <span id="updated" class="num">—</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="refreshBtn" type="button" title="Refresh now"><span id="refreshIco">↻</span><span class="lbl">Refresh</span></button>
+    <button class="btn quiet" id="authBtn" type="button">Sign in</button>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <div id="notices"></div>
+  <section id="summary"></section>
+  <section id="housesSec">
+    <div class="eyebrow" id="housesHead">Houses</div>
+    <div class="houses" id="houses"></div>
+  </section>
+  <section id="unitSec"></section>
+  <section id="alarmSec">
+    <div class="eyebrow">Needs attention</div>
+    <ul class="alist" id="alarms"></ul>
+  </section>
+  <details id="diag">
+    <summary>Diagnostics — raw Sensaphone responses</summary>
+    <p id="diagNote" style="margin:8px 0 6px">Nothing fetched yet.</p>
+    <pre id="rawOut"></pre>
+  </details>
+  <footer>
+    <div class="biz">Pham's Chickens</div>
+    <div class="addr">1875 Goshen Road<br>Carthage, MS 39051<br>United States</div>
+    <div class="fine">Live data from Sensaphone.net · refreshes every 60 seconds while open · your sign-in goes straight from this browser to rest.sensaphone.net and is never stored in the page.</div>
+  </footer>
+</main>
+<div class="sample-tag" id="sampleTag" hidden>Showing a snapshot from Sep 15, 2026 — sign in for live readings.</div>
+
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+    <header>
+      <div><h2 id="shTitle">History</h2><div class="sub" id="shSub"></div></div>
+      <button class="btn quiet" type="button" id="shClose">Close ✕</button>
+    </header>
+    <div class="explain" id="shExplain" hidden></div>
+    <div class="ranges" id="shRanges" role="group" aria-label="Time range">
+      <button type="button" data-h="24" aria-pressed="true">24 h</button>
+      <button type="button" data-h="72" aria-pressed="false">3 d</button>
+      <button type="button" data-h="168" aria-pressed="false">7 d</button>
+      <button type="button" data-h="720" aria-pressed="false">30 d</button>
+    </div>
+    <div class="stats" id="shStats"></div>
+    <div class="chart" id="shChart"></div>
+    <div class="legend" id="shLegend"></div>
+    <div class="note" id="shNote"></div>
+  </div>
+</div>
+
+<div class="gate" id="gate" hidden>
+  <form class="card" id="loginForm" autocomplete="on">
+    <h2>Sign in to Sensaphone.net</h2>
+    <p>Use the same username and password as the Sensaphone.net dashboard. It's sent straight from this browser to rest.sensaphone.net.</p>
+    <div class="field">
+      <label for="user">Username</label>
+      <input id="user" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+    </div>
+    <div class="field">
+      <label for="pass">Password</label>
+      <input id="pass" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <label class="check"><input id="remember" type="checkbox" checked> Keep me signed in on this device (saved only in this browser, so the page can renew the 24-hour session by itself)</label>
+    <div class="err" id="loginErr" hidden></div>
+    <div class="row">
+      <button class="btn quiet" type="button" id="cancelLogin">Not now</button>
+      <button class="btn primary" type="submit" id="loginBtn">Connect</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- constants ----------
+  var API = 'https://rest.sensaphone.net/api/v1';
+  var LS_KEY = 'apco.sensaphone.auth.v1';
+  var POLL_MS = 60 * 1000;
+  var RENEW_AFTER_MS = 6 * 60 * 60 * 1000;   // renew the 24h session after 6h of age
+  var CATS = [
+    { key: 'temp',       re: /^temp/i,         label: 'Temp' },
+    { key: 'power',      re: /^(power|gen)/i,  label: 'Power' },
+    { key: 'water',      re: /^water/i,        label: 'Water flow' },
+    { key: 'controller', re: /^control/i,      label: 'Controller' },
+    { key: 'feed',       re: /^feed/i,         label: 'Feed line' },
+    { key: 'fill',       re: /^fill/i,         label: 'Fill line' }
+  ];
+  var CAT_ORDER = ['water', 'power', 'controller', 'feed', 'fill', 'other'];
+  var WATER_EXPLAIN = "What this input is: the house controller's water value, read over Modbus. Sensaphone raises the alarm once that value has read zero for the zone's recognition time (10 minutes as set up now). It only catches stopped flow \u2014 not a leak, low flow, or a stuck float. Green = flowing, red = stopped, gray = no record.";
+  var SEV_RANK = { crit: 3, warn: 2, good: 1, unk: 0 };
+  var FARM_NAME = "Pham's Chickens";
+  var FARM_ADDRESS = '1875 Goshen Road, Carthage, MS 39051, United States';
+
+  // ---------- state ----------
+  var auth = null;          // {acctid, session, loginAt, expiresAt, username, password, remember}
+  var raw = {};             // last raw API responses (for diagnostics)
+  var lastUpdate = null;
+  var pollTimer = null;
+  var busy = false;
+  var showingSample = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+
+  // ---------- storage (per-viewer convenience only) ----------
+  var store = {
+    get: function () { try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } },
+    set: function (v) { try { localStorage.setItem(LS_KEY, JSON.stringify(v)); } catch (e) {} },
+    clear: function () { try { localStorage.removeItem(LS_KEY); } catch (e) {} }
+  };
+  function persist() {
+    if (!auth) { store.clear(); return; }
+    if (auth.remember) { store.set(auth); }
+    else { store.set({ acctid: auth.acctid, session: auth.session, loginAt: auth.loginAt, expiresAt: auth.expiresAt, username: auth.username, remember: false }); }
+  }
+
+  // ---------- API plumbing ----------
+  function ApiError(kind, message, code) { this.kind = kind; this.message = message; this.code = code; }
+  ApiError.prototype = Object.create(Error.prototype);
+
+  function seg(v) { return encodeURIComponent('{' + String(v) + '}'); }   // the API wants literal braces around ids
+  function basePath(a) { return '/' + seg(a.acctid) + '/' + seg(a.session); }
+
+  function api(method, path, body) {
+    var opts = { method: method, mode: 'cors' };
+    if (body !== undefined) {
+      opts.headers = { 'Content-Type': 'text/plain' };   // plain text keeps the browser from needing a CORS preflight
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(API + path, opts).then(function (res) {
+      return res.text().then(function (t) {
+        try { return JSON.parse(t); }
+        catch (e) { throw new ApiError('parse', 'Sensaphone.net answered with something that was not JSON (HTTP ' + res.status + ').'); }
+      });
+    }, function () {
+      throw new ApiError('network', "Couldn't reach Sensaphone.net. Check the connection and try again.");
+    });
+  }
+
+  function loginMessage(r) {
+    switch (r.code) {
+      case 5: return "Sensaphone.net doesn't recognize that username.";
+      case 6: return 'That password is incorrect.';
+      case 7: return "Sensaphone.net says this user isn't authorized. Try another Sensaphone.net user, or ask the account owner to allow this one.";
+      case 8: return 'Sensaphone.net is temporarily unavailable. Try again in a minute.';
+      default: return 'Sign-in failed: ' + (r.message || ('code ' + r.code));
+    }
+  }
+
+  function login(username, password) {
+    return api('POST', '/login', { request_type: 'create', resource: 'login', user_name: username, password: password })
+      .then(function (j) {
+        var r = j.result || {};
+        if (!r.success) { throw new ApiError('auth', loginMessage(r), r.code); }
+        var resp = j.response || {};
+        var ttl = Number(resp.session_expiration) || 86400;
+        return { acctid: resp.acctid, session: resp.session, loginAt: Date.now(), expiresAt: Date.now() + ttl * 1000 };
+      });
+  }
+
+  function renew() {
+    if (!auth) { return Promise.resolve(); }
+    return api('PUT', basePath(auth) + '/login').then(function (j) {
+      if (j.result && j.result.success) {
+        var ttl = Number(j.response && j.response.session_expiration) || 86400;
+        auth.loginAt = Date.now();
+        auth.expiresAt = Date.now() + ttl * 1000;
+        persist();
+      }
+    }).catch(function () {});
+  }
+
+  // Run fn(auth); if the session is gone (code 1/2), sign in again with saved credentials and retry once.
+  function authed(fn) {
+    return fn(auth).then(function (j) {
+      var code = j && j.result && j.result.code;
+      if (code === 1 || code === 2) {
+        if (auth && auth.password) {
+          return login(auth.username, auth.password).then(function (s) {
+            auth.acctid = s.acctid; auth.session = s.session; auth.loginAt = s.loginAt; auth.expiresAt = s.expiresAt;
+            persist();
+            return fn(auth);
+          });
+        }
+        throw new ApiError('expired', 'Your Sensaphone session expired. Sign in again.', code);
+      }
+      return j;
+    });
+  }
+
+  // ---------- response normalization ----------
+  function unwrap(v) {   // API v2 wraps values as {value, is_null, ...}; v1 returns them bare
+    if (v && typeof v === 'object' && !Array.isArray(v) && Object.prototype.hasOwnProperty.call(v, 'value')) {
+      if (v.is_null === true) { return null; }
+      return v.value;
+    }
+    return v;
+  }
+  function stateText(v) {
+    v = unwrap(v);
+    if (v == null) { return ''; }
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') { return String(v); }
+    if (Array.isArray(v)) { return v.map(stateText).filter(Boolean).join(', '); }
+    if (typeof v === 'object') {
+      var keys = ['state', 'zone_state', 'status', 'name', 'condition', 'description', 'value'];
+      for (var i = 0; i < keys.length; i++) {
+        if (v[keys[i]] != null && typeof v[keys[i]] !== 'object') { return String(v[keys[i]]); }
+      }
+      var parts = [];
+      Object.keys(v).forEach(function (k) { var t = stateText(v[k]); if (t) { parts.push(t); } });
+      return parts.join(', ');
+    }
+    return '';
+  }
+  function asArray(v) { v = unwrap(v); if (v == null) { return []; } return Array.isArray(v) ? v : [v]; }
+  function num(v) { v = unwrap(v); if (v == null || v === '') { return null; } var n = parseFloat(String(v).replace(/[^0-9.+\-eE]/g, '')); return isNaN(n) ? null : n; }
+
+  function findZones(x, depth) {
+    depth = depth || 0;
+    if (!x || depth > 4) { return []; }
+    if (Array.isArray(x)) {
+      if (x.length && x[0] && typeof x[0] === 'object' && ('zone_id' in x[0])) { return x; }
+      return x.reduce(function (acc, it) { return acc.concat(findZones(it, depth + 1)); }, []);
+    }
+    if (typeof x === 'object') {
+      if (Array.isArray(x.zone)) { return x.zone; }
+      if (x.zone && typeof x.zone === 'object') { return [x.zone]; }
+      if (Array.isArray(x.zones)) { return x.zones; }
+      return Object.keys(x).reduce(function (acc, k) { return acc.concat(findZones(x[k], depth + 1)); }, []);
+    }
+    return [];
+  }
+  function findDevices(x, depth) {
+    depth = depth || 0;
+    if (!x || depth > 4) { return []; }
+    if (Array.isArray(x)) {
+      if (x.length && x[0] && typeof x[0] === 'object' && ('device_id' in x[0])) { return x; }
+      return x.reduce(function (acc, it) { return acc.concat(findDevices(it, depth + 1)); }, []);
+    }
+    if (typeof x === 'object') {
+      if ('device_id' in x) { return [x]; }
+      if (Array.isArray(x.device)) { return x.device; }
+      if (x.device && typeof x.device === 'object') { return [x.device]; }
+      return Object.keys(x).reduce(function (acc, k) { return acc.concat(findDevices(x[k], depth + 1)); }, []);
+    }
+    return [];
+  }
+
+  function normalizeDevice(d) {
+    var g = function (k) { return unwrap(d[k]); };
+    var fw = d.firmware && typeof d.firmware === 'object' ? unwrap(d.firmware.version) : unwrap(d.firmware);
+    return {
+      device_id: g('device_id'),
+      name: g('name') || ('Device ' + g('device_id')),
+      description: g('description') || '',
+      product: g('product') || '',
+      is_online: g('is_online'),
+      is_offline_unack: g('is_offline_unack'),
+      connection_status: stateText(g('connection_status')),
+      status: stateText(g('status')),
+      power_status: stateText(g('power_status')),
+      power_value: stateText(g('power_value')),
+      battery_status: stateText(g('battery_status')),
+      battery_value: stateText(g('battery_value')),
+      firmware: fw ? String(fw) : '',
+      timezone: g('timezone') || '',
+      zones: [],
+      raw: d
+    };
+  }
+
+  // Sensaphone ZoneState codes (alarm_status / current_status / alarm_condition / unack_alarms are arrays of these)
+  var ZONE_STATE = { 0: '', 1: 'Alarm', 2: 'OK', 3: 'Pending', 4: 'Open', 5: 'Closed', 6: 'Cycle', 7: 'Low', 8: 'High', 9: 'Off', 10: 'On',
+    11: 'Return to normal', 12: 'Route down', 13: 'Trouble', 14: 'Not responding', 15: 'Dependency failure', 16: 'Battery', 17: 'Acknowledged', 18: 'Unacknowledged' };
+  var ALARM_STATES = { 1: 1, 7: 1, 8: 1, 12: 1, 13: 1, 14: 1, 15: 1, 16: 1, 18: 1 };   // states that mean something is actually wrong
+  function isCode(c) { return typeof c === 'number' || (typeof c === 'string' && /^\d+$/.test(c)); }
+  function stateWords(v) {   // ZoneState codes -> words; plain strings pass through
+    return asArray(v).map(function (c) { return isCode(c) ? (ZONE_STATE[num(c)] || '') : stateText(c); }).filter(Boolean).join(', ');
+  }
+  function hasAlarmCode(v) {   // true only if the list holds an alarm-class state (an "OK" entry means nothing is unacknowledged)
+    return asArray(v).some(function (c) { return isCode(c) ? !!ALARM_STATES[num(c)] : /alarm|high|low|fail|trouble|unack/i.test(stateText(c)); });
+  }
+  function cleanValue(v) {   // digital inputs read like "OK Z: Alarm / NZ: OK" — keep the reading, drop the legend
+    v = unwrap(v);
+    if (typeof v === 'string') { return v.replace(/\s+(?:O|C|Z|NZ)\s*:.*$/i, '').replace(/\\+$/, '').trim(); }
+    return v;
+  }
+
+  function normalizeZone(z) {
+    var g = function (k) { return unwrap(z[k]); };
+    var az = (z.alarm_zone && typeof z.alarm_zone === 'object') ? z.alarm_zone : {};
+    var ga = function (k) { return unwrap(az[k]); };
+    var out = {
+      zone_id: g('zone_id'),
+      canonical: stateText(g('canonical_name')),
+      name: stateText(g('name')) || stateText(g('canonical_name')) || ('Zone ' + g('zone_id')),
+      type: stateText(g('type')),
+      enabled: g('enable'),
+      value: cleanValue(g('value')),
+      units: stateText(g('units')),
+      low: num(ga('alarm_low')),
+      high: num(ga('alarm_high')),
+      alarmEnabled: ga('alarm_enable'),
+      status: stateWords(g('status')) || stateText(ga('alarm_status_str')) || stateWords(ga('alarm_status')),
+      condition: stateWords(ga('alarm_condition')),
+      current: stateWords(ga('current_status')),
+      unack: hasAlarmCode(ga('unack_alarms')),
+      dashAlarm: false
+    };
+    return out;
+  }
+
+  function classify(z) {
+    var n = (z.name || '').trim();
+    var hm = n.match(/house\s*#?\s*(\d+)/i);
+    var cat = null;
+    for (var i = 0; i < CATS.length; i++) { if (CATS[i].re.test(n)) { cat = CATS[i].key; break; } }
+    z.house = hm ? parseInt(hm[1], 10) : null;
+    if (z.house != null) {
+      if (!cat && num(z.value) != null && /f|c|°/i.test(z.units || '')) { cat = 'temp'; }
+      z.cat = cat || 'other';
+      z.catLabel = cat ? CATS.filter(function (c) { return c.key === cat; })[0].label : n.replace(/house\s*#?\s*\d+/i, '').trim() || 'Input';
+    } else if (/^(power|battery|lithium)/i.test(n) || /battery|power/i.test(z.type || '')) {
+      z.cat = 'unit';
+    } else {
+      z.cat = 'loose';
+    }
+    return z;
+  }
+
+  function severity(z) {
+    var st = (z.status || '').toLowerCase();
+    var cond = (z.condition || '').toLowerCase();
+    var val = String(z.value == null ? '' : z.value).toLowerCase();
+    var n = num(z.value);
+    if (z.unack) { return 'crit'; }
+    if (/pending/.test(st) || /pending/.test(cond)) { return 'warn'; }
+    if (/alarm|high|low|fail|trouble|error|fault|not responding|dependency|route down|unack/.test(st)) { return 'crit'; }
+    if (z.dashAlarm) { return 'crit'; }
+    if (/^(ok|normal|clear)/.test(st)) {
+      // status says OK; still flag a numeric reading outside its limits
+      if (n != null && z.low != null && z.high != null && (n < z.low || n > z.high)) { return 'crit'; }
+      return 'good';
+    }
+    if (st === '') {
+      if (n != null) {
+        if (z.low != null && z.high != null) { return (n < z.low || n > z.high) ? 'crit' : 'good'; }
+        return 'good';
+      }
+      if (/^(ok|on|normal|closed|clear)/.test(val)) { return 'good'; }
+      if (/alarm|fail|off|open|trouble/.test(val)) { return 'crit'; }
+    }
+    return 'unk';
+  }
+  function worst(list) {
+    return list.reduce(function (acc, s) { return SEV_RANK[s] > SEV_RANK[acc] ? s : acc; }, 'unk');
+  }
+  function sevIcon(s) { return { good: '✓', warn: '!', crit: '✕', unk: '?' }[s] || '?'; }
+  function sevWord(s, z) {
+    if (s === 'crit') { return z && z.unack ? 'Unacknowledged' : 'Alarm'; }
+    if (s === 'warn') { return 'Pending'; }
+    if (s === 'good') { return 'OK'; }
+    return 'No data';
+  }
+
+  // Build the house model from a normalized device
+  function buildHouses(dev) {
+    var byHouse = {};
+    var unit = [], loose = [];
+    dev.zones.forEach(function (z) {
+      classify(z);
+      z.sev = severity(z);
+      if (z.house != null) {
+        if (!byHouse[z.house]) { byHouse[z.house] = { n: z.house, temps: [], inputs: [] }; }
+        if (z.cat === 'temp') { byHouse[z.house].temps.push(z); } else { byHouse[z.house].inputs.push(z); }
+      } else if (z.cat === 'unit') { unit.push(z); }
+      else { loose.push(z); }
+    });
+    var houses = Object.keys(byHouse).map(function (k) { return byHouse[k]; }).sort(function (a, b) { return a.n - b.n; });
+    houses.forEach(function (h) {
+      h.inputs.sort(function (a, b) { return CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat); });
+      h.sev = worst(h.temps.concat(h.inputs).map(function (z) { return z.sev; }));
+    });
+    // A loose zone with a zero/empty value and a generic name is just an unused input; hide it.
+    loose = loose.filter(function (z) { return !(/^zone\s*\d*$/i.test(z.name) && (num(z.value) === 0 || z.value == null || z.value === '')); });
+    return { houses: houses, unit: unit, loose: loose };
+  }
+
+  // ---------- fetching ----------
+  function fetchAll() {
+    raw = {};
+    return authed(function (a) { return api('GET', basePath(a) + '/device'); }).then(function (dj) {
+      raw.device_list = dj;
+      if (!dj.result || !dj.result.success) { throw new ApiError('api', 'Could not read the device list: ' + (dj.result && dj.result.message)); }
+      var devices = findDevices(dj.response).map(normalizeDevice);
+      if (!devices.length) { throw new ApiError('api', 'Sensaphone.net returned no devices for this account.'); }
+      // zones per device, sequentially
+      return devices.reduce(function (p, d) {
+        return p.then(function () {
+          return authed(function (a) { return api('GET', basePath(a) + '/device/' + seg(d.device_id) + '/zone'); }).then(function (zj) {
+            raw['zones_' + d.device_id] = zj;
+            var zl = findZones(zj.response);
+            if (!zl.length && d.raw && d.raw.zone) { zl = findZones(d.raw); }
+            d.zones = zl.map(normalizeZone);
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        // dashboard: alarm counts + the zones Sensaphone itself considers in alarm (best effort — the page still works without it)
+        return authed(function (a) {
+          return api('GET', basePath(a) + '/dashboard');
+        }).then(function (dash) {
+          raw.dashboard = dash;
+          mergeDashboard(devices, dash);
+        }).catch(function (e) { raw.dashboard_error = String(e && e.message); });
+      }).then(function () { return devices; });
+    });
+  }
+
+  function mergeDashboard(devices, dash) {
+    var resp = dash && dash.response;
+    if (!resp) { return; }
+    var db = resp.dashboard || resp;
+    devices.summary = {
+      online: num(db.online_count), offline: num(db.offline_count),
+      alarms: num(db.total_alarm_count), unack: num(db.unack_count)
+    };
+    findDevices(db).forEach(function (dd) {
+      var d = devices.filter(function (x) { return String(x.device_id) === String(unwrap(dd.device_id)); })[0];
+      if (!d) { return; }
+      ['is_online', 'is_offline_unack'].forEach(function (k) { if (dd[k] != null) { d[k] = unwrap(dd[k]); } });
+      ['connection_status', 'status', 'power_status', 'power_value', 'battery_status', 'battery_value'].forEach(function (k) {
+        if (dd[k] != null) { d[k] = stateText(dd[k]); }
+      });
+      var zmap = {};
+      d.zones.forEach(function (z) { zmap['id:' + z.zone_id] = z; if (z.canonical) { zmap['cn:' + z.canonical] = z; } });
+      // the dashboard lists only zones that are in alarm
+      findZones(dd).forEach(function (dz) {
+        var z = zmap['id:' + unwrap(dz.zone_id)] || zmap['cn:' + stateText(dz.canonical_name)];
+        if (!z) { return; }
+        var az = (dz.alarm_zone && typeof dz.alarm_zone === 'object') ? dz.alarm_zone : {};
+        var st = stateWords(dz.status) || stateText(az.alarm_status_str) || stateWords(az.alarm_status);
+        if (st) { z.status = st; }
+        if (az.unack_alarms != null) { z.unack = hasAlarmCode(az.unack_alarms); }
+        z.dashAlarm = true;
+        if (dz.value != null && (z.value == null || z.value === '')) { z.value = cleanValue(dz.value); }
+      });
+    });
+  }
+
+  // ---------- water flow (the digital no-flow inputs) ----------
+  var GAP_MAX = 12 * 60000;      // a gap longer than this between records means "no record"
+  var LIVE_SPAN = 2 * 60000;     // the live reading is drawn as the last two minutes
+  var STRIP_HOURS = 24;
+  var stripCache = {};           // zone_id -> {at, recs} pulled from the Sensaphone data log
+  function isWaterDigital(z) { return z.cat === 'water' && num(z.value) == null; }
+  function waterState(z) {
+    if (z.sev === 'good') { return { word: 'Flowing' }; }
+    if (z.sev === 'warn') { return { word: 'Stopped', more: 'alarm if still stopped at 10 min' }; }
+    if (z.sev === 'crit') { return { word: z.unack ? 'No flow · unacknowledged' : 'No flow 10+ min' }; }
+    return { word: 'No data' };
+  }
+  function stripRecords(z) {   // this page's own readings + whatever Sensaphone logged, oldest first
+    var since = Date.now() - STRIP_HOURS * 3600000 - GAP_MAX;
+    var recs = (readings[z.zone_id] || []).filter(function (r) { return r[0] >= since; }).map(function (r) { return { t: r[0], v: r[1] }; });
+    var c = stripCache[String(z.zone_id)];
+    if (c && c.recs) { c.recs.forEach(function (r) { if (r.t >= since) { recs.push({ t: r.t, v: r.v, alarm: r.alarm }); } }); }
+    if (!showingSample && z.value != null && z.value !== '') { recs.push({ t: Date.now(), v: z.value, live: true }); }
+    recs.sort(function (a, b) { return a.t - b.t; });
+    return recs;
+  }
+  function stateSegments(recs, t0, t1) {   // -> [{a, b, s}], s = 'ok' | 'alarm' | 'unk'; adjacent equal states merged
+    var segs = [];
+    var push = function (a, b, st) {
+      if (b <= a) { return; }
+      var p = segs[segs.length - 1];
+      if (p && p.s === st && p.b >= a) { p.b = Math.max(p.b, b); } else { segs.push({ a: a, b: b, s: st }); }
+    };
+    if (!recs.length) { push(t0, t1, 'unk'); return segs; }
+    if (recs[0].t > t0) { push(t0, Math.min(recs[0].t, t1), 'unk'); }
+    for (var i = 0; i < recs.length; i++) {
+      var r = recs[i], nx = recs[i + 1];
+      var a = Math.max(r.live ? r.t - LIVE_SPAN : r.t, t0);
+      var b = r.live ? t1 : Math.min(nx ? (nx.live ? nx.t - LIVE_SPAN : nx.t) : t1, t1);
+      if (b <= a) { continue; }
+      var st = isAlarmValue(r) ? 'alarm' : 'ok';
+      if (!r.live && b - a > GAP_MAX) { push(a, a + GAP_MAX, st); push(a + GAP_MAX, b, 'unk'); }
+      else { push(a, b, st); }
+    }
+    return segs;
+  }
+  function fmtAge(ms) {
+    var m = Math.round(ms / 60000);
+    if (m < 60) { return m + ' min'; }
+    var h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (h < 24) { return h + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : ''); }
+    return d + 'd' + (h % 24 ? ' ' + (h % 24) + 'h' : '');
+  }
+  function fmtSince(t) {
+    var d = new Date(t), n = new Date();
+    if (d.toDateString() === n.toDateString()) { return fmtClock(t); }
+    var y = new Date(n.getTime() - 86400000);
+    return (d.toDateString() === y.toDateString() ? 'yesterday ' : fmtDay(t) + ' ') + fmtClock(t);
+  }
+  function sinceText(segs, cur) {   // how long the current state has held, from the merged segments
+    var n = segs.length;
+    if (!n || segs[n - 1].s !== cur) { return ''; }
+    var start = segs[n - 1].a;
+    var atLeast = n === 1 || segs[n - 2].s === 'unk';
+    var age = Date.now() - start;
+    if (atLeast) { return age < 15 * 60000 ? '' : 'for ' + fmtAge(age) + '+'; }
+    return 'since ' + fmtSince(start);
+  }
+  var STRIP_COL = { ok: '#2fb56a', alarm: '#ff6b6b', unk: '#3a4456' };
+  function renderStrip(z) {   // -> {html, since}
+    var t1 = Date.now(), t0 = t1 - STRIP_HOURS * 3600000;
+    var segs = stateSegments(stripRecords(z), t0, t1);
+    var X = function (t) { return (t - t0) / (t1 - t0) * 1000; };
+    var rects = segs.map(function (sg) {
+      if (sg.s === 'unk') { return ''; }
+      var x = X(sg.a), w = Math.max(2, X(sg.b) - x);
+      return '<rect x="' + x.toFixed(1) + '" y="0" width="' + w.toFixed(1) + '" height="10" fill="' + STRIP_COL[sg.s] + '"/>';
+    }).join('');
+    var labels = [];
+    var d = new Date(t0); d.setMinutes(0, 0, 0); d.setHours(Math.ceil(d.getHours() / 6) * 6);
+    while (d.getTime() < t1 - 2 * 3600000) {
+      if (d.getTime() > t0 + 3600000) {
+        var h = d.getHours();
+        labels.push('<span style="left:' + (X(d.getTime()) / 10).toFixed(1) + '%">' + (h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p') + '</span>');
+      }
+      d = new Date(d.getTime() + 6 * 3600000);
+    }
+    labels.push('<span class="end" style="left:100%">now</span>');
+    var cur = z.sev === 'good' ? 'ok' : (z.sev === 'warn' || z.sev === 'crit') ? 'alarm' : null;
+    return {
+      html: '<svg class="wstrip" viewBox="0 0 1000 10" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="1000" height="10" fill="' + STRIP_COL.unk + '"/>' + rects + '</svg><div class="sx">' + labels.join('') + '</div>',
+      since: cur ? sinceText(segs, cur) : ''
+    };
+  }
+  function renderWaterTile(z) {
+    var ws = waterState(z), st = renderStrip(z);
+    return '<li class="' + z.sev + ' water" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button" title="' + esc(z.name) + (z.canonical ? ' (' + esc(z.canonical) + ')' : '') + ' — tap for the last 24 h and what this input means">' +
+      '<span class="k">' + esc(z.catLabel) + ' · last 24 h</span>' +
+      '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(ws.word) +
+      (st.since ? '<small>· ' + esc(st.since) + '</small>' : '') +
+      (ws.more ? '<small>· ' + esc(ws.more) + '</small>' : '') + '</span>' +
+      st.html + '</li>';
+  }
+  var stripBusy = false;
+  function refreshWaterStrips(devices) {   // pull Sensaphone's log for the water inputs every 10 min and redraw their strips
+    if (stripBusy || !auth || showingSample) { return; }
+    var todo = [];
+    devices.forEach(function (dev) {
+      dev.zones.forEach(function (z) {
+        if (!isWaterDigital(z)) { return; }
+        var c = stripCache[String(z.zone_id)];
+        if (!c || Date.now() - c.at > 10 * 60000) { todo.push({ dev: dev, z: z }); }
+      });
+    });
+    if (!todo.length) { return; }
+    stripBusy = true;
+    todo.reduce(function (p, it) {
+      return p.then(function () {
+        return getHistory(it.dev, it.z, STRIP_HOURS).then(function (recs) { return recs; }, function () { return []; }).then(function (recs) {
+          stripCache[String(it.z.zone_id)] = { at: Date.now(), recs: recs };
+          var el = document.querySelector('.inputs li.water[data-zid="' + it.z.zone_id + '"]');
+          var cur = zoneIndex[String(it.z.zone_id)];
+          if (el && cur && recs.length) { el.outerHTML = renderWaterTile(cur.z); }
+        });
+      });
+    }, Promise.resolve()).then(function () { stripBusy = false; }, function () { stripBusy = false; });
+  }
+
+  // ---------- rendering ----------
+  function fmtTemp(v) {
+    var n = num(v);
+    if (n == null) { return null; }
+    return (Math.round(n * 10) / 10).toFixed(1);
+  }
+  function tempUnit(z) {
+    var u = (z.units || '').trim();
+    if (!u) { return '°F'; }
+    if (/^f$/i.test(u) || /°?f/i.test(u)) { return '°F'; }
+    if (/^c$/i.test(u) || /°?c/i.test(u)) { return '°C'; }
+    return u;
+  }
+  function pct(n, lo, hi) {
+    var pad = (hi - lo) * 0.15 || 1;
+    var a = lo - pad, b = hi + pad;
+    return Math.max(0, Math.min(100, ((n - a) / (b - a)) * 100));
+  }
+
+  function renderHouse(h) {
+    var t = h.temps[0];
+    var tempHtml;
+    if (t) {
+      var tv = fmtTemp(t.value);
+      tempHtml = '<div class="temp" data-zid="' + esc(t.zone_id) + '" tabindex="0" role="button" aria-label="Show history for ' + esc(t.name) + '">' +
+        (tv != null
+          ? '<span class="big num ' + (t.sev === 'crit' || t.sev === 'warn' ? t.sev : '') + '">' + esc(tv) + '</span><span class="deg">' + esc(tempUnit(t)) + '</span>'
+          : '<span class="none">No temperature reading</span>') +
+        '<span class="lbl">' + esc(t.name) + (t.canonical ? ' · ' + esc(t.canonical) : '') + '</span></div>';
+      if (tv != null && t.low != null && t.high != null && t.high > t.low) {
+        var n = num(t.value);
+        var out = n < t.low || n > t.high;
+        tempHtml += '<div class="range" title="Alarm limits ' + esc(t.low) + ' to ' + esc(t.high) + '">' +
+          '<span class="lim num">' + esc(fmtTemp(t.low)) + '</span>' +
+          '<div class="track"><div class="band" style="left:' + pct(t.low, t.low, t.high).toFixed(1) + '%;right:' + (100 - pct(t.high, t.low, t.high)).toFixed(1) + '%"></div>' +
+          '<div class="dot' + (out ? ' out' : '') + '" style="left:' + pct(n, t.low, t.high).toFixed(1) + '%"></div></div>' +
+          '<span class="lim num">' + esc(fmtTemp(t.high)) + '</span></div>';
+      }
+    } else {
+      tempHtml = '<div class="temp"><span class="none">No temperature sensor on this house</span></div>';
+    }
+    var inputs = h.inputs.map(function (z) {
+      if (isWaterDigital(z)) { return renderWaterTile(z); }
+      var v = stateText(z.value);
+      var word = sevWord(z.sev, z);
+      var show = (z.sev === 'good' && /^ok$/i.test(v)) ? 'OK' : (v && !/^ok$/i.test(v) ? v : word);
+      if (z.sev === 'warn') { show = 'Pending'; }
+      return '<li class="' + z.sev + '" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button" title="' + esc(z.name) + (z.canonical ? ' (' + esc(z.canonical) + ')' : '') + ' — tap for history">' +
+        '<span class="k">' + esc(z.catLabel) + '</span>' +
+        '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(show) + '</span></li>';
+    }).join('');
+    return '<article class="house ' + h.sev + '" id="house-' + h.n + '">' +
+      '<header><h2>House ' + h.n + '</h2>' +
+      '<span class="chip ' + h.sev + '"><span class="i">' + sevIcon(h.sev) + '</span>' + esc(sevWord(h.sev)) + '</span></header>' +
+      tempHtml +
+      (inputs ? '<ul class="inputs">' + inputs + '</ul>' : '') +
+      '</article>';
+  }
+
+  function unitSev(txt, isBattery) {
+    var t = (txt || '').toLowerCase();
+    if (!t) { return 'unk'; }
+    if (/alarm|fail|low|off|trouble|dead/.test(t)) { return 'crit'; }
+    if (/pending|warn/.test(t)) { return 'warn'; }
+    if (isBattery) { var n = num(t); if (n != null && n < 50) { return 'warn'; } }
+    return 'good';
+  }
+
+  function renderUnit(dev, model) {
+    var items = [];
+    var pushKV = function (k, v, sev, zid) {
+      if (v == null || v === '') { return; }
+      items.push('<div' + (zid != null ? ' data-zid="' + esc(zid) + '" tabindex="0" role="button"' : '') + '><div class="k">' + esc(k) + '</div><div class="v ' + (sev || '') + '">' + (sev ? '<span class="i">' + sevIcon(sev) + '</span>' : '') + esc(v) + '</div></div>');
+    };
+    var online = dev.is_online === true || /online/i.test(dev.connection_status || '');
+    var offline = dev.is_online === false || /offline/i.test(dev.connection_status || '');
+    pushKV('Connection', dev.connection_status || (online ? 'online' : (offline ? 'offline' : '')), online ? 'good' : (offline ? 'crit' : 'unk'));
+    var seen = {};
+    model.unit.forEach(function (z) {
+      var v = stateText(z.value);
+      var k = z.name;
+      seen[k.toLowerCase()] = true;
+      pushKV(k, v || sevWord(z.sev, z), z.sev === 'good' ? unitSev(v || 'ok', /batt/i.test(k)) : z.sev, z.zone_id);
+    });
+    if (!seen['power'] && (dev.power_value || dev.power_status)) { pushKV('Power', dev.power_value || dev.power_status, unitSev(dev.power_status || dev.power_value)); }
+    if (!seen['battery'] && (dev.battery_value || dev.battery_status)) { pushKV('Battery', dev.battery_value || dev.battery_status, unitSev(dev.battery_status || dev.battery_value, true)); }
+    if (dev.product) { pushKV('Unit', dev.product); }
+    if (dev.firmware) { pushKV('Firmware', dev.firmware); }
+    if (dev.timezone) { pushKV('Time zone', dev.timezone); }
+    var loose = model.loose.map(function (z) {
+      return '<div data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button"><div class="k">' + esc(z.name) + '</div><div class="v ' + z.sev + '"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(stateText(z.value) || sevWord(z.sev, z)) + (z.units ? ' ' + esc(z.units) : '') + '</div></div>';
+    }).join('');
+    return '<div class="unit"><div class="row"><h2>' + esc(dev.name) + ' monitor unit</h2>' +
+      (dev.description ? '<span style="color:var(--ink-2);font-size:13px">' + esc(dev.description) + '</span>' : '') + '</div>' +
+      '<div class="kv">' + items.join('') + loose + '</div></div>';
+  }
+
+  var zoneIndex = {};
+  function render(devices) {
+    var allHouses = [], allAlarms = [], unitHtml = [], housesHtml = [], anyOffline = false, farm = null;
+    zoneIndex = {};
+    devices.forEach(function (dev) {
+      var model = buildHouses(dev);
+      dev.zones.forEach(function (z) { zoneIndex[String(z.zone_id)] = { z: z, dev: dev }; });
+      if (!showingSample) { recordReadings(dev); }
+      if (!farm) { farm = dev; }
+      if (devices.length > 1) {
+        housesHtml.push('<div class="eyebrow" style="grid-column:1/-1;margin-top:4px">' + esc(dev.name) + '</div>');
+      }
+      model.houses.forEach(function (h) { allHouses.push(h); housesHtml.push(renderHouse(h)); });
+      dev.zones.forEach(function (z) { if (z.sev === 'crit' || z.sev === 'warn') { allAlarms.push({ z: z, dev: dev }); } });
+      if (dev.is_online === false || /offline/i.test(dev.connection_status || '')) { anyOffline = true; }
+      unitHtml.push(renderUnit(dev, model));
+    });
+
+    // header
+    $('farmName').textContent = FARM_NAME;
+    var conn = $('conn');
+    if (showingSample) { conn.className = 'conn'; conn.textContent = 'Snapshot'; }
+    else if (anyOffline) { conn.className = 'conn off'; conn.textContent = 'Unit offline'; }
+    else { conn.className = 'conn on'; conn.textContent = 'Unit online'; }
+
+    // notices
+    var notices = [];
+    var critH = allHouses.filter(function (h) { return h.sev === 'crit'; });
+    var warnH = allHouses.filter(function (h) { return h.sev === 'warn'; });
+    if (anyOffline) {
+      notices.push('<div class="notice crit"><span class="ico">✕</span><div class="body"><strong>The monitor unit is offline.</strong> Readings below are the last ones Sensaphone.net received.</div></div>');
+    }
+    if (critH.length || warnH.length) {
+      var chips = critH.map(function (h) { return '<a class="chip crit" href="#house-' + h.n + '"><span class="i">✕</span>House ' + h.n + '</a>'; })
+        .concat(warnH.map(function (h) { return '<a class="chip warn" href="#house-' + h.n + '"><span class="i">!</span>House ' + h.n + '</a>'; })).join('');
+      var head = critH.length
+        ? critH.length + (critH.length === 1 ? ' house is in alarm' : ' houses are in alarm') + (warnH.length ? ', ' + warnH.length + ' pending' : '')
+        : warnH.length + (warnH.length === 1 ? ' house has a pending alarm' : ' houses have pending alarms');
+      notices.push('<div class="notice ' + (critH.length ? 'crit' : 'warn') + '"><span class="ico">' + (critH.length ? '✕' : '!') + '</span><div class="body"><strong>' + esc(head) + '.</strong><div class="chips">' + chips + '</div></div></div>');
+    }
+    $('notices').innerHTML = notices.join('');
+    document.title = (anyOffline ? '🔴 OFFLINE — ' : critH.length ? '🔴 ' + critH.length + ' alarm — ' : warnH.length ? '🟠 ' + warnH.length + ' pending — ' : '') + FARM_NAME;
+    $('notices').style.display = notices.length ? 'grid' : 'none';
+    $('notices').style.gap = '10px';
+
+    // summary strip
+    var okH = allHouses.filter(function (h) { return h.sev === 'good'; }).length;
+    var temps = allHouses.map(function (h) { return h.temps[0] ? num(h.temps[0].value) : null; }).filter(function (n) { return n != null; });
+    var avg = temps.length ? (temps.reduce(function (a, b) { return a + b; }, 0) / temps.length) : null;
+    var lo = temps.length ? Math.min.apply(null, temps) : null, hi = temps.length ? Math.max.apply(null, temps) : null;
+    var unitZ = (devices[0] && buildHouses(devices[0]).unit) || [];
+    var batt = unitZ.filter(function (z) { return /^battery/i.test(z.name); })[0];
+    var battTxt = batt ? stateText(batt.value) : (farm && (farm.battery_value || farm.battery_status)) || '';
+    var pw = unitZ.filter(function (z) { return /^power/i.test(z.name); })[0];
+    var pwTxt = pw ? stateText(pw.value) : (farm && (farm.power_value || farm.power_status)) || '';
+    $('summary').innerHTML = '<div class="strip">' +
+      '<div class="stat ' + (okH === allHouses.length && allHouses.length ? 'good' : '') + '"><div class="k">Houses OK</div><div class="v num">' + okH + '<small>of ' + allHouses.length + '</small></div></div>' +
+      '<div class="stat ' + (critH.length ? 'crit' : (warnH.length ? 'warn' : '')) + '"><div class="k">Need attention</div><div class="v num">' + (critH.length + warnH.length) + '<small>' + (critH.length ? critH.length + ' alarm' : '') + (critH.length && warnH.length ? ' · ' : '') + (warnH.length ? warnH.length + ' pending' : '') + '</small></div></div>' +
+      '<div class="stat"><div class="k">Average house temp</div><div class="v num">' + (avg != null ? esc(fmtTemp(avg)) + '<small>°F · ' + esc(fmtTemp(lo)) + '–' + esc(fmtTemp(hi)) + '</small>' : '—') + '</div></div>' +
+      '<div class="stat ' + (pwTxt ? unitSev(pwTxt) : '') + '"><div class="k">Unit power · battery</div><div class="v num">' + esc(pwTxt || '—') + '<small>' + esc(battTxt ? 'battery ' + battTxt : '') + '</small></div></div>' +
+      '</div>';
+
+    // houses
+    $('housesHead').textContent = allHouses.length ? 'Houses · tap any reading for its history' : 'No houses found';
+    $('houses').innerHTML = housesHtml.join('') || '<div class="empty">No zone names contain a house number yet. Name zones like "Temp house 1" on Sensaphone.net and they will show up here.</div>';
+
+    // unit
+    $('unitSec').innerHTML = '<div class="eyebrow">Monitor unit</div>' + unitHtml.join('');
+
+    // alarm list
+    allAlarms.sort(function (a, b) { return SEV_RANK[b.z.sev] - SEV_RANK[a.z.sev] || (a.z.house || 99) - (b.z.house || 99); });
+    $('alarms').innerHTML = allAlarms.length ? allAlarms.map(function (it) {
+      var z = it.z;
+      var v = stateText(z.value);
+      var isW = isWaterDigital(z);
+      var label = isW ? waterState(z).word : sevWord(z.sev, z);
+      var detail = isW
+        ? 'water flow stopped' + (function () { var sn = renderStrip(z).since; return sn ? ' · ' + esc(sn) : ''; })()
+        : 'reads ' + esc(v || '—') + (z.units ? ' ' + esc(z.units) : '') + (z.low != null && z.high != null ? ' · limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) : '');
+      return '<li class="' + z.sev + '" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button"><span class="chip ' + z.sev + '"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(label) + '</span>' +
+        '<span class="zn">' + esc(z.name) + '</span>' +
+        '<span class="zd num">' + (z.canonical ? esc(z.canonical) + ' · ' : '') + detail + '</span></li>';
+    }).join('') : '<li class="empty" style="background:none;border:0;padding:6px 0">Everything is reading OK.</li>';
+
+    // diagnostics
+    if (!showingSample) {
+      var s = JSON.stringify(raw, null, 1);
+      $('rawOut').textContent = s.length > 200000 ? s.slice(0, 200000) + '\n… (truncated)' : s;
+      $('diagNote').textContent = 'Last fetched ' + new Date().toLocaleString() + '. If a house shows the wrong thing, copy this and share it.';
+    } else {
+      $('rawOut').textContent = '';
+      $('diagNote').textContent = 'Sign in to fetch live responses.';
+    }
+  }
+
+  // ---------- refresh loop ----------
+  function setBusy(b) {
+    busy = b;
+    $('refreshBtn').disabled = b;
+    $('refreshIco').innerHTML = b ? '<span class="spin"></span>' : '↻';
+  }
+  function fmtAgo() {
+    if (!lastUpdate) { $('updated').textContent = showingSample ? 'Snapshot' : ''; return; }
+    var s = Math.round((Date.now() - lastUpdate) / 1000);
+    $('updated').textContent = 'Updated ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : s < 3600 ? Math.round(s / 60) + ' min ago' : Math.round(s / 3600) + ' h ago');
+  }
+  setInterval(fmtAgo, 5000);
+
+  function refresh() {
+    if (!auth || busy) { return Promise.resolve(); }
+    setBusy(true);
+    var pre = (Date.now() - (auth.loginAt || 0) > RENEW_AFTER_MS) ? renew() : Promise.resolve();
+    return pre.then(fetchAll).then(function (devices) {
+      showingSample = false;
+      $('sampleTag').hidden = true;
+      render(devices);
+      lastUpdate = Date.now();
+      fmtAgo();
+      clearFetchError();
+      refreshWaterStrips(devices);
+    }).catch(function (e) {
+      showFetchError(e);
+      if (e && e.kind === 'expired') { signOut(false); openGate(); }
+    }).then(function () { setBusy(false); });
+  }
+  function showFetchError(e) {
+    var box = $('fetchErr');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'fetchErr';
+      box.className = 'notice warn';
+      $('main').insertBefore(box, $('notices'));
+    }
+    box.innerHTML = '<span class="ico">!</span><div class="body"><strong>Couldn\'t refresh.</strong> ' + esc(e && e.message ? e.message : String(e)) + (lastUpdate ? ' Showing the last good readings.' : '') + '</div>';
+  }
+  function clearFetchError() { var b = $('fetchErr'); if (b) { b.parentNode.removeChild(b); } }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(function () { if (!document.hidden) { refresh(); } }, POLL_MS);
+  }
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && auth && lastUpdate && Date.now() - lastUpdate > 20000) { refresh(); }
+  });
+
+  // ---------- sign in / out ----------
+  function openGate() {
+    $('loginErr').hidden = true;
+    $('gate').hidden = false;
+    if (auth && auth.username) { $('user').value = auth.username; }
+    setTimeout(function () { ($('user').value ? $('pass') : $('user')).focus(); }, 50);
+  }
+  function closeGate() { $('gate').hidden = true; }
+  function signOut(remote) {
+    if (remote && auth) { api('DELETE', basePath(auth) + '/login').catch(function () {}); }
+    auth = null; store.clear(); stopPolling(); lastUpdate = null;
+    $('authBtn').textContent = 'Sign in';
+    $('conn').className = 'conn'; $('conn').textContent = 'Not signed in';
+    fmtAgo();
+  }
+  function signedIn() {
+    $('authBtn').textContent = 'Sign out';
+    closeGate();
+    startPolling();
+    return refresh();
+  }
+
+  $('loginForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var u = $('user').value.trim(), p = $('pass').value, rem = $('remember').checked;
+    if (!u || !p) { return; }
+    $('loginBtn').disabled = true; $('loginErr').hidden = true;
+    login(u, p).then(function (s) {
+      auth = { acctid: s.acctid, session: s.session, loginAt: s.loginAt, expiresAt: s.expiresAt, username: u, password: rem ? p : null, remember: rem };
+      persist();
+      $('pass').value = '';
+      return signedIn();
+    }).catch(function (e) {
+      $('loginErr').textContent = e && e.message ? e.message : 'Sign-in failed.';
+      $('loginErr').hidden = false;
+    }).then(function () { $('loginBtn').disabled = false; });
+  });
+  $('cancelLogin').addEventListener('click', closeGate);
+  $('gate').addEventListener('click', function (ev) { if (ev.target === $('gate')) { closeGate(); } });
+  $('authBtn').addEventListener('click', function () { if (auth) { signOut(true); renderSample(); } else { openGate(); } });
+  $('refreshBtn').addEventListener('click', function () { if (auth) { refresh(); } else { openGate(); } });
+
+  // ---------- readings this page has seen (fallback when Sensaphone has no log) ----------
+  var RD_KEY = 'apco.readings.v1';
+  var readings = (function () { try { return JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+  function recordReadings(dev) {
+    var now = Date.now(), cutoff = now - 30 * 86400000, changed = false;
+    dev.zones.forEach(function (z) {
+      var v = z.value == null ? '' : String(z.value);
+      if (v === '') { return; }
+      var arr = readings[z.zone_id] || (readings[z.zone_id] = []);
+      var last = arr[arr.length - 1];
+      if (last && last[1] === v && now - last[0] < 10 * 60000) { return; }   // unchanged and recent: skip
+      arr.push([now, v]); changed = true;
+      while (arr.length && arr[0][0] < cutoff) { arr.shift(); }
+      if (arr.length > 900) { arr.splice(0, arr.length - 900); }
+    });
+    if (changed) { try { localStorage.setItem(RD_KEY, JSON.stringify(readings)); } catch (e) {} }
+  }
+
+  // ---------- Sensaphone history ----------
+  var logPointCache = {};
+  var histCache = {};
+  function sensaTs(d) {   // Sensaphone's packed timestamp: 0-indexed fields, 31-day months, 2000-based year
+    return d.getUTCSeconds() + d.getUTCMinutes() * 60 + d.getUTCHours() * 3600 + (d.getUTCDate() - 1) * 86400 + d.getUTCMonth() * 2678400 + (d.getUTCFullYear() % 100) * 32140800;
+  }
+  function findKey(x, key, depth) {
+    depth = depth || 0;
+    if (!x || typeof x !== 'object' || depth > 6) { return undefined; }
+    if (Object.prototype.hasOwnProperty.call(x, key)) { return x[key]; }
+    var keys = Object.keys(x);
+    for (var i = 0; i < keys.length; i++) { var r = findKey(x[keys[i]], key, depth + 1); if (r !== undefined) { return r; } }
+    return undefined;
+  }
+  function getLogPoints(deviceId) {
+    if (logPointCache[deviceId]) { return Promise.resolve(logPointCache[deviceId]); }
+    return authed(function (a) {
+      return api('GET', basePath(a) + '/history/data_log_points/resource_type/' + seg('device') + '/device_id/' + seg(deviceId));
+    }).then(function (j) {
+      raw['log_points_' + deviceId] = j;
+      if (!j.result || !j.result.success) { throw new ApiError('api', 'Sensaphone.net would not list the data-log points: ' + (j.result && j.result.message)); }
+      var pts = asArray(findKey(j.response, 'log_points'));
+      var map = {};
+      pts.forEach(function (p) {
+        if (!p || typeof p !== 'object') { return; }
+        var lp = unwrap(p.log_point);
+        if (lp == null) { return; }
+        var zid = null, nm = '';
+        Object.keys(p).forEach(function (k) {
+          if (/zone/i.test(k) && /id/i.test(k) && p[k] != null) { zid = unwrap(p[k]); }
+          if (/^(name|canonical_name|zone_name)$/i.test(k)) { nm = nm || stateText(p[k]); }
+        });
+        if (zid != null) { map['id:' + zid] = lp; }
+        if (nm) { map['name:' + nm.toLowerCase()] = lp; }
+        map['lp:' + lp] = p;
+      });
+      logPointCache[deviceId] = map;
+      return map;
+    });
+  }
+  function parseRecords(resp, sinceMs) {
+    var recs = asArray(findKey(resp, 'data_log'));
+    return recs.map(function (r) {
+      if (!r || typeof r !== 'object') { return null; }
+      var t = num(r.epoch); if (t == null) { t = num(r.timestamp); }
+      if (t == null) { return null; }
+      if (t < 1e11) { t = t * 1000; }
+      return { t: t, v: unwrap(r.value), alarm: unwrap(r.is_alarm) };
+    }).filter(function (r) { return r && r.t >= sinceMs && r.t <= Date.now() + 3600000; })
+      .sort(function (a, b) { return a.t - b.t; });
+  }
+  function getHistory(dev, z, hours) {
+    var key = dev.device_id + ':' + z.zone_id + ':' + hours;
+    var c = histCache[key];
+    if (c && Date.now() - c.at < 60000) { return Promise.resolve(c.recs); }
+    var sinceMs = Date.now() - hours * 3600000;
+    return getLogPoints(dev.device_id).then(function (map) {
+      var lp = map['id:' + z.zone_id];
+      if (lp == null && z.name) { lp = map['name:' + z.name.toLowerCase()]; }
+      if (lp == null && z.canonical) { lp = map['name:' + z.canonical.toLowerCase()]; }
+      if (lp == null) { throw new ApiError('nolog', 'Sensaphone.net has no data-log point for this input. Turn on data logging for it under the zone settings on Sensaphone.net.'); }
+      var start = new Date(sinceMs - 26 * 3600000), end = new Date(Date.now() + 26 * 3600000);
+      var path = '/history/data_log/log_points/' + seg(lp) + '/start/' + seg(sensaTs(start)) + '/end/' + seg(sensaTs(end)) + '/begin_offset/' + seg(0) + '/record_offset/' + seg(5000);
+      return authed(function (a) { return api('GET', basePath(a) + path); }).then(function (j) {
+        raw['history_' + z.zone_id] = j;
+        var recs = (j.result && j.result.success) ? parseRecords(j.response, sinceMs) : [];
+        if (recs.length) { return recs; }
+        // no rows with a time window — try without one (some accounts return newest-first pages)
+        var p2 = '/history/data_log/log_points/' + seg(lp) + '/begin_offset/' + seg(0) + '/record_offset/' + seg(3000);
+        return authed(function (a) { return api('GET', basePath(a) + p2); }).then(function (j2) {
+          raw['history_' + z.zone_id + '_nofilter'] = j2;
+          if (!j2.result || !j2.result.success) { throw new ApiError('api', 'Sensaphone.net would not return history: ' + (j2.result && j2.result.message)); }
+          return parseRecords(j2.response, sinceMs);
+        });
+      });
+    }).then(function (recs) { histCache[key] = { at: Date.now(), recs: recs }; return recs; });
+  }
+  function localHistory(z, hours) {
+    var since = Date.now() - hours * 3600000;
+    return (readings[z.zone_id] || []).filter(function (r) { return r[0] >= since; }).map(function (r) { return { t: r[0], v: r[1] }; });
+  }
+
+  // ---------- chart drawing ----------
+  var SERIES = '#62b6ff';
+  function fmtClock(t) { var d = new Date(t); var h = d.getHours(), m = d.getMinutes(); var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap; }
+  function fmtDay(t) { var d = new Date(t); return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate(); }
+  function fmtWhen(t, hours) { return hours <= 24 ? fmtClock(t) : fmtDay(t) + ' ' + fmtClock(t); }
+  function isAlarmValue(r) {
+    var a = r.alarm; if (a === true || a === 1 || /^(1|true|yes)$/i.test(String(a || ''))) { return true; }
+    return /alarm|fail|open|off|trouble/i.test(String(r.v == null ? '' : r.v)) && !/^ok/i.test(String(r.v));
+  }
+  function niceTicks(lo, hi, n) {
+    var span = hi - lo || 1, step = Math.pow(10, Math.floor(Math.log(span / n) / Math.LN10));
+    var err = span / n / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var ticks = [], v = Math.ceil(lo / step) * step;
+    for (; v <= hi + 1e-9; v += step) { ticks.push(Math.round(v * 1000) / 1000); }
+    return ticks;
+  }
+  function xTicks(t0, t1, hours) {
+    var out = [], d = new Date(t0);
+    var stepH = hours <= 24 ? 4 : hours <= 72 ? 12 : hours <= 168 ? 24 : 24 * 5;
+    d.setMinutes(0, 0, 0);
+    if (stepH >= 24) { d.setHours(0); } else { d.setHours(Math.ceil(d.getHours() / stepH) * stepH); }
+    while (d.getTime() <= t1) {
+      if (d.getTime() >= t0) { out.push({ t: d.getTime(), label: stepH >= 24 ? fmtDay(d.getTime()).replace(/^\w+ /, '') : fmtClock(d.getTime()).replace(':00', '') }); }
+      d = new Date(d.getTime() + stepH * 3600000);
+    }
+    return out;
+  }
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (text != null) { e.textContent = text; }
+    return e;
+  }
+
+  function drawLine(container, recs, z, hours) {
+    container.innerHTML = '';
+    var W = Math.max(320, container.clientWidth || 600), H = 250;
+    var ml = 44, mr = 14, mt = 14, mb = 28;
+    var t1 = Date.now(), t0 = t1 - hours * 3600000;
+    var vals = recs.map(function (r) { return num(r.v); }).filter(function (v) { return v != null; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var span = Math.max(hi - lo, 4);
+    if (z.low != null && z.high != null && z.high > z.low) {
+      if (z.low >= lo - span * 1.5) { lo = Math.min(lo, z.low); }
+      if (z.high <= hi + span * 1.5) { hi = Math.max(hi, z.high); }
+    }
+    var pad = (hi - lo) * 0.1 || 1; lo -= pad; hi += pad;
+    var X = function (t) { return ml + (t - t0) / (t1 - t0) * (W - ml - mr); };
+    var Y = function (v) { return mt + (hi - v) / (hi - lo) * (H - mt - mb); };
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': z.name + ' history' });
+    // grid + y labels
+    niceTicks(lo, hi, 4).forEach(function (v) {
+      svg.appendChild(svgEl('line', { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), stroke: 'rgba(255,255,255,0.08)', 'stroke-width': 1 }));
+      svg.appendChild(svgEl('text', { x: ml - 6, y: Y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#a9b3c3' }, String(v)));
+    });
+    // alarm band
+    if (z.low != null && z.high != null && z.high > z.low) {
+      var yTop = Math.max(mt, Y(z.high)), yBot = Math.min(H - mb, Y(z.low));
+      svg.appendChild(svgEl('rect', { x: ml, y: yTop, width: W - ml - mr, height: Math.max(0, yBot - yTop), fill: '#45d483', opacity: 0.1 }));
+      [z.low, z.high].forEach(function (lim) {
+        var yl = Y(lim);
+        if (yl < mt || yl > H - mb) { return; }   // limit is off-chart; the band already runs to the edge
+        svg.appendChild(svgEl('line', { x1: ml, x2: W - mr, y1: yl, y2: yl, stroke: '#45d483', 'stroke-width': 1, 'stroke-dasharray': '4 4', opacity: 0.7 }));
+        svg.appendChild(svgEl('text', { x: W - mr - 2, y: yl - 3, 'text-anchor': 'end', 'font-size': 10, fill: '#45d483' }, (lim === z.low ? 'low ' : 'high ') + fmtTemp(lim)));
+      });
+    }
+    // x ticks
+    xTicks(t0, t1, hours).forEach(function (tk) {
+      svg.appendChild(svgEl('line', { x1: X(tk.t), x2: X(tk.t), y1: H - mb, y2: H - mb + 4, stroke: '#6e7a8e', 'stroke-width': 1 }));
+      svg.appendChild(svgEl('text', { x: X(tk.t), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: '#a9b3c3' }, tk.label));
+    });
+    svg.appendChild(svgEl('line', { x1: ml, x2: W - mr, y1: H - mb, y2: H - mb, stroke: 'rgba(255,255,255,0.2)', 'stroke-width': 1 }));
+    // area + line
+    var pts = recs.filter(function (r) { return num(r.v) != null; });
+    var d = '', area = '';
+    pts.forEach(function (r, i) { var x = X(r.t).toFixed(1), y = Y(num(r.v)).toFixed(1); d += (i ? 'L' : 'M') + x + ' ' + y; });
+    if (pts.length) {
+      area = d + 'L' + X(pts[pts.length - 1].t).toFixed(1) + ' ' + (H - mb) + 'L' + X(pts[0].t).toFixed(1) + ' ' + (H - mb) + 'Z';
+      svg.appendChild(svgEl('path', { d: area, fill: SERIES, opacity: 0.12 }));
+      svg.appendChild(svgEl('path', { d: d, fill: 'none', stroke: SERIES, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+      var last = pts[pts.length - 1];
+      svg.appendChild(svgEl('circle', { cx: X(last.t), cy: Y(num(last.v)), r: 4.5, fill: SERIES, stroke: '#161c29', 'stroke-width': 2 }));
+      // out-of-band points in red
+      if (z.low != null && z.high != null) {
+        pts.forEach(function (r) { var v = num(r.v); if (v < z.low || v > z.high) { svg.appendChild(svgEl('circle', { cx: X(r.t), cy: Y(v), r: 2.5, fill: '#ff6b6b' })); } });
+      }
+    }
+    // hover layer
+    var hover = svgEl('g', { style: 'display:none' });
+    var vline = svgEl('line', { y1: mt, y2: H - mb, stroke: 'rgba(255,255,255,0.35)', 'stroke-width': 1 });
+    var dot = svgEl('circle', { r: 5, fill: SERIES, stroke: '#fff', 'stroke-width': 2 });
+    hover.appendChild(vline); hover.appendChild(dot); svg.appendChild(hover);
+    var tip = document.createElement('div'); tip.className = 'tip'; tip.style.display = 'none';
+    container.appendChild(svg); container.appendChild(tip);
+    var unit = tempUnit(z);
+    var move = function (ev) {
+      if (!pts.length) { return; }
+      var rect = svg.getBoundingClientRect();
+      var px = (ev.clientX - rect.left) * (W / rect.width);
+      var t = t0 + (px - ml) / (W - ml - mr) * (t1 - t0);
+      var best = pts[0], bd = Infinity;
+      pts.forEach(function (r) { var dd = Math.abs(r.t - t); if (dd < bd) { bd = dd; best = r; } });
+      var x = X(best.t), y = Y(num(best.v));
+      vline.setAttribute('x1', x); vline.setAttribute('x2', x); dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+      hover.style.display = '';
+      tip.style.display = '';
+      tip.innerHTML = '<b>' + esc(fmtTemp(best.v)) + ' ' + esc(unit) + '</b><br>' + esc(fmtWhen(best.t, hours));
+      var cx = x * (rect.width / W), cy = y * (rect.height / H);
+      tip.style.left = Math.max(70, Math.min(rect.width - 70, cx)) + 'px';
+      tip.style.top = Math.max(44, cy - 12) + 'px';
+    };
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', function () { hover.style.display = 'none'; tip.style.display = 'none'; });
+    return vals;
+  }
+
+  function drawStates(container, recs, z, hours) {
+    container.innerHTML = '';
+    var W = Math.max(320, container.clientWidth || 600), H = 104;
+    var ml = 10, mr = 10, mt = 26, mb = 30, barH = 40;
+    var t1 = Date.now(), t0 = t1 - hours * 3600000;
+    var X = function (t) { return ml + (t - t0) / (t1 - t0) * (W - ml - mr); };
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': z.name + ' state history' });
+    svg.appendChild(svgEl('rect', { x: ml, y: mt, width: W - ml - mr, height: barH, rx: 6, fill: '#3a4456' }));
+    var segs = [], alarmMs = 0, count = 0;
+    var isW = isWaterDigital(z);
+    if (isW) {
+      stateSegments(recs, t0, t1).forEach(function (sg) {
+        segs.push({ t0: sg.a, t1: sg.b, alarm: sg.s === 'alarm', unk: sg.s === 'unk', v: sg.s === 'alarm' ? 'Stopped' : sg.s === 'ok' ? 'Flowing' : 'No record' });
+        if (sg.s === 'alarm') { alarmMs += sg.b - sg.a; if (sg.a > t0) { count++; } }
+      });
+    } else {
+      var seq = recs.slice();
+      if (seq.length && seq[0].t > t0) { seq.unshift({ t: t0, v: seq[0].v, alarm: seq[0].alarm, ghost: true }); }
+      for (var i = 0; i < seq.length; i++) {
+        var a = seq[i], b = seq[i + 1], end = b ? b.t : t1;
+        var al = isAlarmValue(a);
+        var st0 = Math.max(a.t, t0), st1 = Math.min(end, t1);
+        var prev = segs[segs.length - 1];
+        if (prev && prev.alarm === al) { prev.t1 = st1; }               // extend the current run
+        else { segs.push({ t0: st0, t1: st1, alarm: al, v: a.v }); if (al && !a.ghost) { count++; } }
+        if (al) { alarmMs += st1 - st0; }
+      }
+    }
+    segs.forEach(function (sg) {
+      if (sg.unk) { return; }   // the gray base bar already shows "no record"
+      var x = X(sg.t0), w = Math.max(1.5, X(sg.t1) - x);
+      svg.appendChild(svgEl('rect', { x: x, y: mt, width: w, height: barH, fill: sg.alarm ? '#ff6b6b' : '#2fb56a' }));
+    });
+    xTicks(t0, t1, hours).forEach(function (tk) {
+      svg.appendChild(svgEl('line', { x1: X(tk.t), x2: X(tk.t), y1: mt + barH, y2: mt + barH + 5, stroke: '#6e7a8e', 'stroke-width': 1 }));
+      svg.appendChild(svgEl('text', { x: X(tk.t), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: '#a9b3c3' }, tk.label));
+    });
+    svg.appendChild(svgEl('text', { x: ml, y: 16, 'font-size': 11.5, fill: '#a9b3c3' }, isW ? 'Green = flowing · Red = stopped · gray = no record' : 'Green = OK · Red = alarm/open · gray = no record'));
+    var tip = document.createElement('div'); tip.className = 'tip'; tip.style.display = 'none';
+    container.appendChild(svg); container.appendChild(tip);
+    var move = function (ev) {
+      var rect = svg.getBoundingClientRect();
+      var px = (ev.clientX - rect.left) * (W / rect.width);
+      var t = t0 + (px - ml) / (W - ml - mr) * (t1 - t0);
+      var sg = null;
+      for (var i = 0; i < segs.length; i++) { if (t >= segs[i].t0 && t <= segs[i].t1) { sg = segs[i]; break; } }
+      if (!sg) { tip.style.display = 'none'; return; }
+      tip.style.display = '';
+      tip.innerHTML = (isW ? '<b>' + esc(sg.v) + '</b>' : '<b>' + esc(sg.alarm ? 'Alarm' : 'OK') + '</b> · ' + esc(String(sg.v == null ? '' : sg.v))) + '<br>' + esc(fmtWhen(sg.t0, hours)) + ' → ' + esc(fmtWhen(sg.t1, hours));
+      tip.style.left = Math.max(90, Math.min(rect.width - 90, px * (rect.width / W))) + 'px';
+      tip.style.top = (mt * (rect.height / H) - 6) + 'px';
+    };
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', function () { tip.style.display = 'none'; });
+    return { alarmMs: alarmMs, count: count };
+  }
+
+  // ---------- history sheet ----------
+  var sheet = { z: null, dev: null, hours: 24, house: null };
+  function openSheet(zid) {
+    var it = zoneIndex[String(zid)];
+    if (!it) { return; }
+    if (showingSample || !auth) { openGate(); return; }
+    sheet.z = it.z; sheet.dev = it.dev;
+    var z = it.z;
+    $('shTitle').textContent = (z.house != null ? 'House ' + z.house + ' · ' + (z.catLabel || z.name) : z.name);
+    var isW = isWaterDigital(z);
+    $('shSub').textContent = z.name + (z.canonical ? ' · ' + z.canonical : '') + ' · now ' + (isW ? waterState(z).word : (stateText(z.value) || '—')) + (num(z.value) != null && z.cat === 'temp' ? ' ' + tempUnit(z) : '');
+    $('shExplain').hidden = !isW;
+    if (isW) { $('shExplain').textContent = WATER_EXPLAIN; }
+    $('sheetBg').hidden = false;
+    document.body.style.overflow = 'hidden';
+    loadSheet();
+  }
+  function closeSheet() { $('sheetBg').hidden = true; document.body.style.overflow = ''; sheet.z = null; }
+  function loadSheet() {
+    var z = sheet.z, dev = sheet.dev, hours = sheet.hours;
+    if (!z) { return; }
+    var chart = $('shChart');
+    chart.innerHTML = '<div class="msg">Loading history…</div>';
+    $('shStats').innerHTML = ''; $('shLegend').innerHTML = ''; $('shNote').textContent = '';
+    if (isWaterDigital(z)) {
+      getHistory(dev, z, hours).then(function (recs) { return recs; }, function () { return []; }).then(function (remote) {
+        var local = localHistory(z, hours);
+        var recs = remote.concat(local).sort(function (a, b) { return a.t - b.t; });
+        if (!showingSample && z.value != null && z.value !== '') { recs.push({ t: Date.now(), v: z.value, live: true }); }
+        if (recs.length < 2) {
+          chart.innerHTML = '<div class="msg">No readings for this input yet. Leave the page open and a record builds up here; turning on continuous data logging for the water zones on Sensaphone.net makes it complete.</div>';
+          return;
+        }
+        renderSheetData(recs, z, hours, 'Sensaphone.net log: ' + remote.length + ' readings · collected by this page: ' + local.length + '. Gray = no record. Turn on continuous logging for the water zones on Sensaphone.net to fill the gaps.');
+      });
+      return;
+    }
+    getHistory(dev, z, hours).then(function (recs) {
+      if (!recs.length) { throw new ApiError('empty', 'Sensaphone.net returned no logged readings for this range.'); }
+      renderSheetData(recs, z, hours, 'Sensaphone.net data log · ' + recs.length + ' readings');
+    }).catch(function (e) {
+      var local = localHistory(z, hours);
+      if (local.length > 1) {
+        renderSheetData(local, z, hours, 'Readings this page collected while open (' + local.length + ') — ' + (e && e.message ? e.message : ''));
+      } else {
+        chart.innerHTML = '<div class="msg ' + (e && e.kind === 'nolog' ? '' : 'crit') + '">' + esc(e && e.message ? e.message : String(e)) + '</div>';
+        $('shNote').textContent = 'This page also keeps its own record of readings while it is open; give it a little time and a graph will build up here even without Sensaphone logging.';
+      }
+    });
+  }
+  function renderSheetData(recs, z, hours, note) {
+    var chart = $('shChart');
+    var numeric = recs.filter(function (r) { return num(r.v) != null; }).length >= Math.max(2, recs.length * 0.6) && z.cat !== 'power' && z.cat !== 'water' && z.cat !== 'controller' && z.cat !== 'feed' && z.cat !== 'fill';
+    if (numeric) {
+      var vals = drawLine(chart, recs, z, hours);
+      var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+      var unit = tempUnit(z);
+      var outN = (z.low != null && z.high != null) ? vals.filter(function (v) { return v < z.low || v > z.high; }).length : 0;
+      $('shStats').innerHTML =
+        '<div><div class="k">Now</div><div class="v num">' + esc(fmtTemp(recs[recs.length - 1].v)) + '<small style="font:500 12px var(--font-body);color:var(--ink-2)"> ' + esc(unit) + '</small></div></div>' +
+        '<div><div class="k">Low</div><div class="v num">' + esc(fmtTemp(mn)) + '</div></div>' +
+        '<div><div class="k">High</div><div class="v num">' + esc(fmtTemp(mx)) + '</div></div>' +
+        '<div><div class="k">Average</div><div class="v num">' + esc(fmtTemp(avg)) + '</div></div>' +
+        (z.low != null && z.high != null ? '<div><div class="k">Outside limits</div><div class="v num ' + (outN ? 'crit' : 'good') + '">' + outN + '</div></div>' : '');
+      $('shLegend').innerHTML = '<span><i style="background:' + SERIES + '"></i>' + esc(z.name) + '</span>' +
+        (z.low != null && z.high != null ? '<span><i class="band" style="background:#45d483"></i>Alarm limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) + ' ' + esc(unit) + '</span><span><i style="background:#ff6b6b;width:8px;height:8px;border-radius:50%"></i>Outside limits</span>' : '');
+    } else {
+      var st = drawStates(chart, recs, z, hours);
+      var mins = Math.round(st.alarmMs / 60000);
+      var isW = isWaterDigital(z);
+      $('shStats').innerHTML =
+        '<div><div class="k">Now</div><div class="v ' + (z.sev === 'good' ? 'good' : z.sev === 'crit' ? 'crit' : '') + '">' + esc(isW ? waterState(z).word : (stateText(z.value) || sevWord(z.sev, z))) + '</div></div>' +
+        '<div><div class="k">' + (isW ? 'Times stopped' : 'Alarm events') + '</div><div class="v num ' + (st.count ? 'crit' : 'good') + '">' + st.count + '</div></div>' +
+        '<div><div class="k">' + (isW ? 'Time stopped' : 'Time in alarm') + '</div><div class="v num">' + (mins >= 120 ? (mins / 60).toFixed(1) + ' h' : mins + ' min') + '</div></div>';
+      $('shLegend').innerHTML = isW
+        ? '<span><i style="background:#2fb56a;height:10px"></i>Flowing</span><span><i style="background:#ff6b6b;height:10px"></i>Stopped</span><span><i style="background:#3a4456;height:10px"></i>No record</span>'
+        : '<span><i style="background:#45d483;height:10px"></i>OK</span><span><i style="background:#ff6b6b;height:10px"></i>Alarm</span>';
+    }
+    $('shNote').textContent = note;
+  }
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest ? ev.target.closest('[data-zid]') : null;
+    if (el) { ev.preventDefault(); openSheet(el.getAttribute('data-zid')); }
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('sheetBg').hidden) { closeSheet(); return; }
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.getAttribute && ev.target.getAttribute('data-zid')) { ev.preventDefault(); openSheet(ev.target.getAttribute('data-zid')); }
+  });
+  $('shClose').addEventListener('click', closeSheet);
+  $('sheetBg').addEventListener('click', function (ev) { if (ev.target === $('sheetBg')) { closeSheet(); } });
+  $('shRanges').addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button[data-h]') : null;
+    if (!b) { return; }
+    sheet.hours = parseInt(b.getAttribute('data-h'), 10);
+    Array.prototype.forEach.call($('shRanges').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    loadSheet();
+  });
+  var resizeT = null;
+  window.addEventListener('resize', function () { if (sheet.z && !$('sheetBg').hidden) { clearTimeout(resizeT); resizeT = setTimeout(loadSheet, 200); } });
+
+  // ---------- sample snapshot (what the page shows before sign-in) ----------
+  function renderSample() {
+    showingSample = true;
+    $('sampleTag').hidden = false;
+    var mk = function (id, cn, name, value, status, low, high) {
+      return { zone_id: id, canonical_name: cn, name: name, value: value, status: status, alarm_zone: (low != null ? { alarm_low: low, alarm_high: high } : {}) };
+    };
+    var zones = [
+      mk(1, '', 'Power', 'On', 'OK'), mk(2, '', 'Battery', '100%', 'OK', 90, 100), mk(3, '', 'Lithium Battery', '100%', 'OK', 100, 100),
+      mk(11, 'MB1', 'Temp house 1', '84.650', 'OK', 71.93, 90.16), mk(12, 'MB2', 'Temp house 2', '84.140', 'OK', 71.82, 89.92),
+      mk(13, 'MB3', 'Temp house 3', '73.350', 'OK', 53.64, 90.05), mk(14, 'MB4', 'Temp House 4', '85.680', 'OK', 70.68, 90.97),
+      mk(15, 'MB5', 'Temp house 5', '87.770', 'OK', 71.15, 92.25), mk(16, 'MB6', 'Temp house 6', '85.940', 'OK', 72.90, 90.68),
+      mk(17, 'MB7', 'Temp house 7', '87.100', 'OK', 70.63, 90.97), mk(18, 'MB8', 'Temp house 8', '86.400', 'OK', 70.92, 90.30)
+    ];
+    var cats = [['Power', 'MB', 9], ['Water', 'MB', 17], ['Controller', 'MB', 25], ['Feed line', 'MB', 33], ['Fill line', 'MB', 41]];
+    var pending = { 'Feed line': [1, 3, 4, 7], 'Fill line': [3, 7] };
+    cats.forEach(function (c) {
+      for (var h = 1; h <= 8; h++) {
+        var idx = c[2] + h - 1;
+        var isP = pending[c[0]] && pending[c[0]].indexOf(h) >= 0;
+        var nm = (c[0] === 'Power' && h === 3) ? 'Power or generator house 3' : c[0] + ' house ' + h;
+        zones.push(mk(100 + idx, 'MB' + idx, nm, isP ? 'Alarm' : 'OK', isP ? 'Pending' : 'OK'));
+      }
+    });
+    var dev = normalizeDevice({ device_id: 0, name: 'AP Co', product: 'Sentinel PRO', is_online: true, connection_status: 'online', power_value: 'On', battery_value: '100%' });
+    dev.zones = zones.map(normalizeZone);
+    render([dev]);
+    lastUpdate = null; fmtAgo();
+    $('conn').className = 'conn'; $('conn').textContent = 'Snapshot · sign in for live data';
+  }
+
+  // ---------- boot ----------
+  function boot() {
+    renderSample();
+    var saved = store.get();
+    if (saved && saved.acctid && saved.session) {
+      auth = saved;
+      if (Date.now() < (auth.expiresAt || 0) || auth.password) {
+        signedIn();
+        return;
+      }
+      auth = null; store.clear();
+    }
+    openGate();
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
