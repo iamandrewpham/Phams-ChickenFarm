@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Alert Consent Form | Pham's Chickens LLC</title>
+<meta name="description" content="Consent form for employees of Pham's Chickens LLC to receive automated farm alarm text alerts.">
+<meta name="theme-color" content="#121826">
+<style>
+  :root {
+    --navy: #121826;
+    --ink: #1a2233;
+    --muted: #5b6678;
+    --line: #d5dbe5;
+    --bg: #f3f5f8;
+    --card: #ffffff;
+    --accent: #c2740a;
+    --soft: #fbf6ec;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .band {
+    background: var(--navy);
+    color: #fff;
+    border-bottom: 3px solid var(--accent);
+  }
+  .band-inner, main, footer {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .band-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .brand { font-weight: 700; font-size: 1.05rem; color: #fff; text-decoration: none; }
+  .band nav a { color: #cfd6e4; text-decoration: none; font-size: 0.9rem; margin-left: 14px; }
+  .band nav a:first-child { margin-left: 0; }
+  .band nav a:hover, .band nav a[aria-current] { color: #fff; text-decoration: underline; }
+  main { padding-top: 28px; padding-bottom: 8px; }
+  .eyebrow {
+    font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin: 0 0 4px;
+  }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 10px; }
+  h2 { font-size: 1.08rem; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); margin-bottom: 22px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  ul.terms { margin: 0; padding-left: 20px; }
+  ul.terms li { margin-bottom: 8px; }
+  ul.terms li:last-child { margin-bottom: 0; }
+  a { color: #1d4ed8; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+  .field label, .sig label {
+    display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px;
+  }
+  .field input {
+    width: 100%; font: inherit; color: var(--ink);
+    padding: 8px 2px; border: 0; border-bottom: 1.5px solid #8893a5;
+    background: transparent; border-radius: 0;
+  }
+  .field input:focus { outline: none; border-bottom-color: var(--accent); }
+  .consent {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--soft); border: 1px solid #ecd9b4; border-radius: 8px;
+    padding: 14px; margin: 18px 0;
+  }
+  .consent input { width: 20px; height: 20px; margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+  .consent label { font-size: 0.97rem; }
+  .sig { display: grid; grid-template-columns: 2fr 1fr; gap: 16px 20px; margin-top: 6px; }
+  .sig.three { grid-template-columns: 1fr 1fr 1fr; }
+  .sig .line { height: 38px; border-bottom: 1.5px solid #8893a5; }
+  .msg {
+    background: #eef2f8; border-left: 3px solid var(--navy); border-radius: 0 8px 8px 0;
+    padding: 10px 14px; margin: 8px 0 14px; font-size: 0.95rem;
+  }
+  .office { border-style: dashed; }
+  .office h2 { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 4px 0 20px; }
+  button {
+    font: inherit; font-weight: 600; color: #fff; background: var(--navy);
+    border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer;
+  }
+  button:hover { background: #1f2a44; }
+  .hint { color: var(--muted); font-size: 0.9rem; margin: 0; }
+  footer {
+    color: var(--muted); font-size: 0.88rem;
+    padding-top: 12px; padding-bottom: 36px;
+    border-top: 1px solid var(--line); margin-top: 8px;
+  }
+  footer p { margin-bottom: 6px; }
+  @media (max-width: 560px) {
+    h1 { font-size: 1.4rem; }
+    .grid, .sig, .sig.three { grid-template-columns: 1fr; }
+    .card { padding: 16px; }
+  }
+  @media print {
+    body { background: #fff; font-size: 10pt; line-height: 1.4; }
+    p { margin-bottom: 7px; }
+    h2 { margin-bottom: 6px; }
+    ul.terms li { margin-bottom: 4px; }
+    .consent { margin: 12px 0; padding: 10px; }
+    .consent label { font-size: inherit; }
+    .msg { margin: 6px 0 10px; padding: 7px 12px; }
+    .sig .line { height: 30px; }
+    .band-inner { padding-top: 0; padding-bottom: 8px; }
+    .band { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    .brand { color: #000; }
+    .band nav, .actions { display: none; }
+    main { padding-top: 14px; }
+    .card { border-color: #999; padding: 12px 14px; margin-bottom: 10px; break-inside: avoid; }
+    .consent, .msg { background: #fff; }
+    h1 { font-size: 17pt; }
+    .lede { margin-bottom: 12px; color: #222; }
+    a { color: #000; text-decoration: none; }
+    ul.terms a::after { content: " (phamchicken.com" attr(href) ")"; font-size: 0.85em; }
+    footer { padding-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-inner">
+    <a class="brand" href="/">Pham's Chickens LLC</a>
+    <nav aria-label="Text alert program">
+      <a href="/sms-consent.html" aria-current="page">Consent form</a>
+      <a href="/terms.html">SMS terms</a>
+      <a href="/privacy.html">Privacy policy</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <p class="eyebrow">Farm Alarm Text Alerts</p>
+  <h1>Text Alert Consent Form</h1>
+  <p class="lede">
+    Pham's Chickens LLC uses an automated monitoring system in its poultry houses. When the system
+    detects a problem, such as high or low temperature, a power failure, or a water or ventilation
+    fault, it sends a text message to the employees and farm managers responsible for responding.
+    This form records your agreement to receive those alerts on your mobile phone.
+  </p>
+
+  <section class="card" aria-labelledby="agree">
+    <h2 id="agree">What you are agreeing to</h2>
+    <ul class="terms">
+      <li><strong>Who is texting you:</strong> Pham's Chickens LLC, 1875 Goshen Road, Carthage, MS 39051.</li>
+      <li><strong>What you will receive:</strong> automated alarm and system alert messages about conditions in the poultry houses, and notices when an alarm clears. These are operational messages only. We do not send marketing or promotional texts.</li>
+      <li><strong>How often:</strong> message frequency varies and depends on alarm activity.</li>
+      <li><strong>Cost:</strong> message and data rates may apply, depending on your mobile plan.</li>
+      <li><strong>How to stop:</strong> reply <strong>STOP</strong> to any alert at any time, or tell a farm administrator. Reply <strong>HELP</strong> for help.</li>
+      <li><strong>Your information:</strong> your mobile number is used only to send these alerts. We do not sell or share mobile numbers or consent records with third parties for marketing or promotional purposes.</li>
+      <li>Full details are in our <a href="/terms.html">SMS Terms and Conditions</a> and <a href="/privacy.html">Privacy Policy</a>.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="details">
+    <h2 id="details">Your details and consent</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="name">Full name</label>
+        <input id="name" name="name" type="text" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="mobile">Mobile phone number</label>
+        <input id="mobile" name="mobile" type="tel" autocomplete="tel" inputmode="tel">
+      </div>
+    </div>
+
+    <div class="consent">
+      <input id="agreebox" name="agreebox" type="checkbox">
+      <label for="agreebox">
+        I agree to receive automated alarm and system alert text messages from Pham's Chickens LLC
+        at the mobile number above. Message frequency varies. Message and data rates may apply.
+        I can reply STOP at any time to opt out, or HELP for help. I have read the
+        <a href="/terms.html">SMS Terms and Conditions</a> and <a href="/privacy.html">Privacy Policy</a>.
+      </label>
+    </div>
+
+    <div class="sig">
+      <div>
+        <label>Signature</label>
+        <div class="line"></div>
+      </div>
+      <div>
+        <label>Date</label>
+        <div class="line"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="button" onclick="window.print()">Print this form</button>
+    <p class="hint">Fill in your details, print, sign, and return the form to a farm administrator.</p>
+  </div>
+
+  <section class="card" aria-labelledby="next">
+    <h2 id="next">What happens next</h2>
+    <p>
+      A farm administrator keeps your signed form on file and adds your number to the alert list.
+      Nobody is added without a signed form. You will then receive this confirmation message:
+    </p>
+    <p class="msg">
+      Pham's Chickens Alerts: You are now set up to receive farm alarm text alerts. Msg frequency
+      varies. Msg &amp; data rates may apply. Reply HELP for help, STOP to opt out.
+    </p>
+    <p>A typical alert looks like this:</p>
+    <p class="msg" style="margin-bottom:0">
+      Pham's Chickens Alert: House 3 HIGH TEMP - 92F (limit 88F) at 2:14 PM. Please check the house
+      immediately. Reply STOP to opt out, HELP for help.
+    </p>
+  </section>
+
+  <section class="card office" aria-labelledby="office">
+    <h2 id="office">Farm office use only</h2>
+    <div class="sig three">
+      <div><label>Added to alert list by</label><div class="line"></div></div>
+      <div><label>Date added</label><div class="line"></div></div>
+      <div><label>Date removed</label><div class="line"></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p><strong>Pham's Chickens LLC</strong> · 1875 Goshen Road, Carthage, MS 39051</p>
+  <p>Questions about text alerts: <a href="mailto:REPLACE_WITH_CONTACT_EMAIL">REPLACE_WITH_CONTACT_EMAIL</a></p>
+  <p><a href="/terms.html">SMS Terms and Conditions</a> · <a href="/privacy.html">Privacy Policy</a></p>
+</footer>
+
+</body>
+</html>
