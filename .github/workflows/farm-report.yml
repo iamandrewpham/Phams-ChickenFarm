@@ -1,0 +1,54 @@
+name: Farm report
+
+on:
+  schedule:
+    # Cron is UTC and has no DST awareness, so both offsets for each slot are
+    # registered. The script checks which one is actually 6a/12p/8p Central and
+    # quietly exits on the other. Nothing to change twice a year.
+    - cron: '0 11 * * *'   # 6:00a CDT
+    - cron: '0 12 * * *'   # 6:00a CST
+    - cron: '0 17 * * *'   # 12:00p CDT
+    - cron: '0 18 * * *'   # 12:00p CST
+    - cron: '0 1 * * *'    # 8:00p CDT
+    - cron: '0 2 * * *'    # 8:00p CST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'preview (prints only) or send'
+        required: true
+        default: preview
+        type: choice
+        options: [preview, send]
+      slot:
+        description: 'which report to build'
+        required: true
+        default: morning
+        type: choice
+        options: [morning, lunch, night]
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build and send
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          SENSAPHONE_USER: ${{ secrets.SENSAPHONE_USER }}
+          SENSAPHONE_PASS: ${{ secrets.SENSAPHONE_PASS }}
+          TWILIO_SID: ${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+          TWILIO_FROM: ${{ secrets.TWILIO_FROM }}
+          SMS_TO: ${{ secrets.SMS_TO }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node scripts/farm-report.mjs "${{ inputs.mode }}" "${{ inputs.slot }}"
+          else
+            node scripts/farm-report.mjs
+          fi
