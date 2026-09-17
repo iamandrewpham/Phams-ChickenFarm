@@ -344,116 +344,251 @@ function episodes(recs) {
 
 // -------------------------------------------------------- report bodies
 
+const ICON = {
+  temp: '\u{1F321}', power: '\u26A1', water: '\u{1F4A7}', controller: '\u2699',
+  feed: '\u{1F33E}', fill: '\u{1F6E2}', other: '\u{1F538}', unit: '\u{1F50C}', loose: '\u{1F538}'
+};
+const HOT = '\u{1F525}';
+const OK = '\u2705', ALERT = '\u{1F6A8}', WARN = '\u26A0\uFE0F',
+      NIGHT = '\u{1F319}', OFFLINE = '\u{1F4F5}', CHICK = '\u{1F414}';
+
 function houseLabel(n) { return 'H' + n; }
+
+function head(now) { return `${CHICK} PHAM'S \u00B7 ${stamp(now)}`; }
 
 function shortStatus(zones) {
   const houses = {};
   for (const z of zones) {
     if (z.house == null) continue;
-    if (!houses[z.house]) houses[z.house] = [];
-    houses[z.house].push(z);
+    (houses[z.house] = houses[z.house] || []).push(z);
   }
   return Object.keys(houses).map(Number).sort((a, b) => a - b).map(n => ({ n, zones: houses[n] }));
 }
 
 function fmtVal(z) {
   const n = num(z.value);
-  if (n != null && /f|c|°/i.test(z.units || '')) return Math.round(n) + (/(^|[^a-z])c\b/i.test(z.units) ? 'C' : 'F');
+  if (n != null && /f|c|\u00B0/i.test(z.units || '')) return Math.round(n) + '\u00B0';
   const v = String(z.value == null ? '' : z.value).trim();
   return v.length > 10 ? v.slice(0, 10) : (v || '--');
+}
+
+function iconFor(z) {
+  if (z.cat === 'temp') {
+    const n = num(z.value);
+    if (n != null && z.high != null && n > z.high) return HOT;
+  }
+  return ICON[z.cat] || ICON.other;
 }
 
 function problemLines(zones) {
   return zones.filter(z => z.sev === 'crit' || z.sev === 'warn').map(z => {
     const where = z.house != null ? houseLabel(z.house) + ' ' : '';
-    const what = (z.catLabel || z.name).toUpperCase();
     const val = fmtVal(z);
-    const lim = (z.high != null && num(z.value) != null && num(z.value) > z.high) ? ` (limit ${Math.round(z.high)})`
-      : (z.low != null && num(z.value) != null && num(z.value) < z.low) ? ` (limit ${Math.round(z.low)})` : '';
-    return `${where}${what} ${val}${lim}`.trim();
+    const n = num(z.value);
+    let lim = '';
+    if (n != null && z.high != null && n > z.high) lim = ' \u2014 max ' + Math.round(z.high);
+    else if (n != null && z.low != null && n < z.low) lim = ' \u2014 min ' + Math.round(z.low);
+    const label = z.cat === 'temp' ? '' : String(z.catLabel || z.name);
+    // don't print the label when the value already says the same thing
+    const dup = label && String(val).toLowerCase().includes(label.toLowerCase());
+    const body = (label && !dup) ? `${label} ${val}` : `${val}`;
+    return `${iconFor(z)} ${where}${body}${lim}`.replace(/\s+/g, ' ').trim();
   });
 }
 
-function buildCurrent(state, now, label) {
-  const lines = [`${FARM}  ${stamp(now)}`];
+function buildCurrent(state, now, wx) {
+  const lines = [head(now)];
   const probs = problemLines(state.zones);
   const houses = shortStatus(state.zones);
 
   if (probs.length) {
-    lines.push(`${probs.length} ISSUE${probs.length > 1 ? 'S' : ''}`, '');
+    lines.push(`${ALERT} ${probs.length} ISSUE${probs.length > 1 ? 'S' : ''}`, '');
     probs.slice(0, 8).forEach(p => lines.push(p));
-    const okHouses = houses.filter(h => !h.zones.some(z => z.sev === 'crit' || z.sev === 'warn'));
-    if (okHouses.length) {
+    const ok = houses.filter(h => !h.zones.some(z => z.sev === 'crit' || z.sev === 'warn'));
+    if (ok.length) {
       lines.push('');
-      lines.push(okHouses.map(h => {
+      const cells = ok.map(h => {
         const t = h.zones.find(z => z.cat === 'temp');
-        return `${houseLabel(h.n)} ok${t ? ' ' + fmtVal(t) : ''}`;
-      }).join('   '));
+        return `${OK} ${houseLabel(h.n)}${t ? ' ' + fmtVal(t) : ''}`;
+      });
+      for (let i = 0; i < cells.length; i += 2) lines.push(cells.slice(i, i + 2).join('   '));
     }
   } else {
-    lines.push(`All ${houses.length} houses normal`, '');
-    for (const h of houses) {
+    lines.push(`${OK} All ${houses.length} houses OK`, '');
+    const cells = houses.map(h => {
       const t = h.zones.find(z => z.cat === 'temp');
-      const others = h.zones.filter(z => z.cat !== 'temp' && z.cat !== 'other').slice(0, 2);
-      lines.push(`${houseLabel(h.n)} ${t ? fmtVal(t) : '--'}  ` +
-        others.map(z => `${z.catLabel} ok`).join('  '));
+      return `${houseLabel(h.n)} ${t ? fmtVal(t) : '--'}`;
+    });
+    for (let i = 0; i < cells.length; i += 2) {
+      lines.push(ICON.temp + ' ' + cells.slice(i, i + 2).join('  '));
     }
+    const cats = ['power', 'water', 'controller', 'feed'];
+    const row = [];
+    for (const c of cats) {
+      const any = state.zones.filter(z => z.cat === c);
+      if (any.length) row.push(`${ICON[c]} ${c === 'power' ? 'Power' : c === 'water' ? 'Water'
+        : c === 'controller' ? 'Ctrl' : 'Feed'} OK`);
+    }
+    if (row.length) lines.push(row.slice(0, 2).join('   '));
   }
 
+  const wl = weatherLines(wx, state.__slot);
+  if (wl.length) lines.push('', ...wl);
+
   const offline = state.devices.filter(d => d.is_online === false || d.is_online === 0);
-  if (offline.length) lines.push('', `!! DEVICE OFFLINE: ${offline.map(d => d.name).join(', ')}`);
+  if (offline.length) lines.push('', `${OFFLINE} OFFLINE: ${offline.map(d => d.name).join(', ')}`);
+  else {
+    const last = state.devices.map(d => num(d.last_checkin)).filter(v => v != null)[0];
+    if (last != null) lines.push('', 'Last check ' + clock(last < 1e11 ? last * 1000 : last));
+  }
   return lines.join('\n');
 }
 
-function buildMorning(state, now, sinceMs, hist) {
-  const lines = [`${FARM}  ${stamp(now)}`, `OVERNIGHT ${clock(sinceMs)}-${clock(now.getTime())}`, ''];
+function buildMorning(state, now, sinceMs, hist, wx) {
+  const lines = [head(now), `${NIGHT} Overnight ${clock(sinceMs)}\u2013${clock(now.getTime())}`, ''];
 
   const evs = [];
   for (const { zone, recs } of hist) {
     for (const e of episodes(recs)) {
       const mins = Math.max(1, Math.round((e.end - e.start) / 60000));
+      const ic = zone.cat === 'temp' ? HOT : (ICON[zone.cat] || ICON.other);
+      const what = zone.cat === 'temp'
+        ? (e.peak != null ? Math.round(e.peak) + '\u00B0' : 'temp')
+        : (zone.catLabel || zone.name);
       evs.push({ t: e.start, open: e.open, text:
-        `${clock(e.start)} ${zone.house != null ? houseLabel(zone.house) + ' ' : ''}` +
-        `${zone.catLabel || zone.name}` +
-        `${e.peak != null ? ' ' + Math.round(e.peak) : ''}, ${mins}m${e.open ? ' ONGOING' : ''}` });
+        `  ${clock(e.start)} ${ic} ${zone.house != null ? houseLabel(zone.house) + ' ' : ''}` +
+        `${what} \u00B7 ${mins}m${e.open ? ' \u2014 ONGOING' : ''}` });
     }
   }
   evs.sort((a, b) => a.t - b.t);
 
   if (evs.length) {
     const open = evs.filter(e => e.open).length;
-    lines.push(`${evs.length} event${evs.length > 1 ? 's' : ''}` +
-      (open ? `, ${open} ONGOING` : ', all cleared'));
-    evs.slice(0, 8).forEach(e => lines.push(' ' + e.text));
-    if (evs.length > 8) lines.push(` +${evs.length - 8} more`);
+    lines.push(`${WARN} ${evs.length} event${evs.length > 1 ? 's' : ''} \u00B7 ` +
+      (open ? `${open} ONGOING` : 'all cleared'));
+    evs.slice(0, 7).forEach(e => lines.push(e.text));
+    if (evs.length > 7) lines.push(`  +${evs.length - 7} more`);
   } else {
-    lines.push('No events overnight');
+    lines.push(`${OK} No events overnight`);
   }
 
   const temps = hist.filter(h => h.zone.cat === 'temp' && h.recs.length);
   if (temps.length) {
-    lines.push('', 'Temp low/high');
-    const chunks = temps.map(({ zone, recs }) => {
+    lines.push('', ICON.temp + ' Low\u2013high');
+    temps.sort((a, b) => (a.zone.house ?? 99) - (b.zone.house ?? 99));
+    const cells = temps.map(({ zone, recs }) => {
       const vals = recs.map(r => num(r.v)).filter(v => v != null);
       if (!vals.length) return null;
-      return ` ${zone.house != null ? houseLabel(zone.house) : zone.name.slice(0, 6)} ` +
-        `${Math.round(Math.min(...vals))}/${Math.round(Math.max(...vals))}`;
+      const lbl = zone.house != null ? houseLabel(zone.house) : zone.name.slice(0, 6);
+      return `${lbl} ${Math.round(Math.min(...vals))}\u2013${Math.round(Math.max(...vals))}`;
     }).filter(Boolean);
-    for (let i = 0; i < chunks.length; i += 2) lines.push(chunks.slice(i, i + 2).join('  '));
+    for (let i = 0; i < cells.length; i += 2) lines.push('  ' + cells.slice(i, i + 2).join('   '));
   }
 
   const probs = problemLines(state.zones);
   lines.push('');
   if (probs.length) {
-    lines.push('NOW: ' + probs.length + ' open');
-    probs.slice(0, 4).forEach(p => lines.push(' ' + p));
+    lines.push(`${ALERT} Now: ${probs.length} open`);
+    probs.slice(0, 4).forEach(p => lines.push('  ' + p));
   } else {
-    lines.push(`NOW: all ${shortStatus(state.zones).length} normal`);
+    const last = state.devices.map(d => num(d.last_checkin)).filter(v => v != null)[0];
+    lines.push(`${OK} Now: all normal` + (last != null
+      ? ' \u00B7 ' + clock(last < 1e11 ? last * 1000 : last) : ''));
   }
 
+  const wl = weatherLines(wx, 'morning');
+  if (wl.length) lines.push('', ...wl);
+
   const offline = state.devices.filter(d => d.is_online === false || d.is_online === 0);
-  if (offline.length) lines.push(`!! DEVICE OFFLINE: ${offline.map(d => d.name).join(', ')}`);
+  if (offline.length) lines.push(`${OFFLINE} OFFLINE: ${offline.map(d => d.name).join(', ')}`);
   return lines.join('\n');
+}
+
+// --------------------------------------------------------------- weather
+
+// Open-Meteo: free, no API key, no account. Override via env if the farm moves.
+const LAT = process.env.FARM_LAT || '32.7476';   // 1875 Goshen Rd, Carthage MS
+const LON = process.env.FARM_LON || '-89.5342';
+
+async function fetchWeather() {
+  const url = 'https://api.open-meteo.com/v1/forecast'
+    + `?latitude=${LAT}&longitude=${LON}`
+    + '&hourly=temperature_2m,dew_point_2m,cloud_cover,wind_speed_10m,precipitation_probability'
+    + '&daily=temperature_2m_max,temperature_2m_min'
+    + '&temperature_unit=fahrenheit&wind_speed_unit=mph'
+    + '&timezone=America%2FChicago&forecast_days=2';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('weather HTTP ' + res.status);
+  return res.json();
+}
+
+/** Pull the hourly rows for a local-time window, [startHour, endHour) from dayOffset. */
+function hourlySlice(w, dayOffset, startHour, endHour) {
+  const out = [];
+  const h = w.hourly;
+  for (let i = 0; i < h.time.length; i++) {
+    const [d, t] = h.time[i].split('T');
+    const hr = parseInt(t.slice(0, 2), 10);
+    const day = w.daily.time.indexOf(d);
+    if (day !== dayOffset) continue;
+    if (hr < startHour || hr >= endHour) continue;
+    out.push({
+      hr,
+      temp: h.temperature_2m[i], dew: h.dew_point_2m[i],
+      cloud: h.cloud_cover[i], wind: h.wind_speed_10m[i],
+      pop: h.precipitation_probability[i]
+    });
+  }
+  return out;
+}
+
+const r0 = v => (v == null ? null : Math.round(v));
+
+/**
+ * Turn the forecast into one "what to watch" line.
+ * The reasoning behind each threshold is written up in
+ * docs/why-house-temps-move.md - read that before changing numbers.
+ */
+function weatherLines(w, slot) {
+  if (!w) return [];
+  const lines = [];
+  const maxT = r0(w.daily.temperature_2m_max[0]);
+  const minT = r0(w.daily.temperature_2m_min[0]);
+
+  if (slot === 'night') {
+    const night = hourlySlice(w, 0, 20, 24).concat(hourlySlice(w, 1, 0, 7));
+    const lowT = night.length ? r0(Math.min(...night.map(x => x.temp))) : r0(w.daily.temperature_2m_min[1]);
+    const cloud = night.length ? Math.min(...night.map(x => x.cloud)) : null;
+    const wind = night.length ? Math.min(...night.map(x => x.wind)) : null;
+    const clearCalm = cloud != null && cloud < 30 && wind != null && wind < 5;
+    lines.push(`\u{1F321} Tonight low ${lowT}\u00B0` + (clearCalm ? ' \u00B7 clear & calm' : ''));
+    if (clearCalm) {
+      lines.push('\u26A0\uFE0F Radiant cooling \u2014 houses drop faster than outside');
+    }
+    const gust = night.length ? Math.max(...night.map(x => x.wind)) : 0;
+    if (gust >= 18) lines.push(`\u{1F4A8} Wind to ${r0(gust)}mph \u2014 check curtains/inlets`);
+    return lines;
+  }
+
+  // morning + lunch: today ahead
+  const day = hourlySlice(w, 0, 10, 20);
+  const peakDew = day.length ? r0(Math.max(...day.map(x => x.dew))) : null;
+  const gust = day.length ? r0(Math.max(...day.map(x => x.wind))) : 0;
+  const pop = day.length ? Math.max(...day.map(x => x.pop)) : 0;
+
+  lines.push(`\u{1F324} Today ${minT}\u2013${maxT}\u00B0`);
+
+  if (maxT != null && maxT >= 95) {
+    lines.push('\u{1F525} Severe heat \u2014 full tunnel + cool cells, watch water use');
+  } else if (maxT != null && maxT >= 88) {
+    lines.push('\u2600\uFE0F Heat load builds 2\u20136p \u2014 stage fans early');
+  }
+  if (maxT != null && maxT >= 88 && peakDew != null && peakDew >= 72) {
+    lines.push(`\u{1F4A6} Dew pt ${peakDew}\u00B0 \u2014 cool cells lose bite, lean on air speed`);
+  }
+  if (pop >= 60) lines.push(`\u{1F327} Rain ${pop}% \u2014 humidity up, litter damp`);
+  if (gust >= 20) lines.push(`\u{1F4A8} Wind to ${gust}mph \u2014 check curtains/inlets`);
+  return lines;
 }
 
 // ---------------------------------------------------------------- twilio
@@ -509,8 +644,14 @@ function slotFromSchedule(expr, now = new Date()) {
 async function buildReport(env, slot, now = new Date()) {
   const auth = await login(env);
   const state = await fetchState(auth);
+  state.__slot = slot;
 
-  if (slot !== 'morning') return buildCurrent(state, now, slot);
+  // weather is a nice-to-have; a forecast outage must not cost us the report
+  let wx = null;
+  try { wx = await fetchWeather(); }
+  catch (err) { console.error('weather unavailable:', err.message); }
+
+  if (slot !== 'morning') return buildCurrent(state, now, wx);
 
   const sinceMs = overnightStart(now);
   const untilMs = now.getTime();
@@ -522,7 +663,7 @@ async function buildReport(env, slot, now = new Date()) {
     try { hist.push({ zone: z, recs: await history(auth, lpCache, z, sinceMs, untilMs) }); }
     catch { /* one bad zone shouldn't kill the whole report */ }
   }
-  return buildMorning(state, now, sinceMs, hist);
+  return buildMorning(state, now, sinceMs, hist, wx);
 }
 
 async function main() {
