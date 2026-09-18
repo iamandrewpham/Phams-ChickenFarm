@@ -508,6 +508,60 @@
   .card .row.wrap { flex-wrap: wrap; }
 
   .sample-tag { position: sticky; bottom: 0; z-index: 10; text-align: center; padding: 8px 12px; margin-top: 4px; background: var(--warn-bg); color: var(--ink); border-top: 1px solid var(--warn); font-size: 13px; }
+
+  /* ---------- sensor log: notes with a time frame, kept per input ---------- */
+  .logsec { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .loghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .loghead .btn, .logtools .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+  .loglist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .loglist li { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: baseline; background: var(--surface-2); border-left: 3px solid var(--unk); border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; min-width: 0; }
+  .loglist li:hover { outline: 1px solid var(--line-strong); outline-offset: 1px; }
+  .loglist li.down { border-left-color: var(--crit); }
+  .loglist li.issue { border-left-color: var(--warn); }
+  .loglist li.maint { border-left-color: var(--accent); }
+  .loglist li.note { border-left-color: var(--series); }
+  .loglist .lk { font-weight: 600; white-space: nowrap; }
+  .loglist li.down .lk { color: var(--crit); }
+  .loglist li.issue .lk { color: var(--warn); }
+  .loglist li.maint .lk { color: var(--accent-text); }
+  .loglist li.note .lk { color: var(--series); }
+  .loglist .lw { color: var(--ink-2); font-size: 12.5px; overflow-wrap: anywhere; }
+  .loglist .lz { grid-column: 1 / -1; color: var(--ink-2); font-size: 12.5px; font-weight: 500; }
+  .loglist .lt { grid-column: 1 / -1; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
+  .loglist .lb { grid-column: 1 / -1; color: var(--ink-3); font-size: 11.5px; }
+  .loglist li.empty { display: block; background: none; border: 0; padding: 4px 0; cursor: default; color: var(--ink-3); font-size: 13.5px; }
+  .loglist li.empty:hover { outline: none; }
+  .pill.log { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+  .pill.log.down { background: var(--crit-bg); color: var(--crit); }
+  .pill.log.issue { background: var(--warn-bg); color: var(--warn); }
+  .pill.log.note { background: var(--surface-2); color: var(--ink-2); }
+  .inputs li .lp, .kv div .lp, .alist li .lp { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+  .inputs li .lp .pill, .kv div .lp .pill, .alist li .lp .pill { font-size: 10.5px; padding: 1px 6px; letter-spacing: 0; text-transform: none; }
+  .alist li .lp { margin-top: 0; }
+  .logtools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .logtools select { min-height: 32px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: inherit; font: inherit; font-size: 13px; max-width: 100%; }
+  .logsec-note { font-size: 12px; color: var(--ink-3); margin: 6px 0 0; }
+  .kind { display: flex; gap: 6px; flex-wrap: wrap; }
+  .kind button { border: 1px solid var(--line-strong); background: transparent; color: var(--ink-2); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 500; min-height: 34px; }
+  .kind button[aria-pressed="true"] { border-color: transparent; font-weight: 600; background: var(--accent); color: var(--accent-ink); }
+  .kind button[data-k="down"][aria-pressed="true"] { background: var(--crit); color: #fff; }
+  .kind button[data-k="issue"][aria-pressed="true"] { background: var(--warn); color: var(--on-warn); }
+  .kind button[data-k="maint"][aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .kind button[data-k="note"][aria-pressed="true"] { background: var(--series); color: #fff; }
+  .field input[type="datetime-local"], .field textarea, .field select {
+    width: 100%; min-width: 0; padding: 9px 10px; border-radius: 8px;
+    border: 1px solid var(--line-strong); background: var(--surface);
+    font: inherit; font-size: 16px; color: inherit;
+  }
+  .field textarea { min-height: 76px; resize: vertical; line-height: 1.4; }
+  .when { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
+  .when .btn { min-height: 40px; padding-inline: 10px; }
+  #logGate, #viewGate { z-index: 70; }   /* these open from inside the history sheet, which sits at 60 */
+  .linkbox { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; margin: -2px 0 6px; }
+  .linkbox input { width: 100%; min-width: 0; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface-2); color: inherit; font-family: var(--font-body); }
+  .linkbox .btn { min-height: 36px; }
+  .range .lim.sc { color: var(--ink-3); font-weight: 400; }
+  .range.fixed .band { opacity: 0.45; }
 </style>
 
 </head>
@@ -544,6 +598,21 @@
     <div class="eyebrow">Needs attention</div>
     <ul class="alist" id="alarms"></ul>
   </section>
+  <section id="logSec">
+    <div class="eyebrow" id="logHead">Sensor log</div>
+    <div class="logtools">
+      <select id="logFilter" aria-label="Which entries to show"></select>
+      <button class="btn" type="button" id="logAddAny">+ Add entry</button>
+      <span style="flex:1"></span>
+      <button class="btn quiet" type="button" id="logCsv" title="Download every entry as a spreadsheet (CSV) file">⤓ CSV</button>
+      <button class="btn quiet" type="button" id="logCopy" title="Copy the entries as plain text">Copy</button>
+      <button class="btn quiet" type="button" id="logImport" title="Bring in a CSV that was downloaded from this page on another phone or computer">Import</button>
+      <input type="file" id="logFile" accept=".csv,text/csv,text/plain" hidden>
+    </div>
+    <ul class="loglist" id="logAll"></ul>
+    <div class="row" style="display:flex;justify-content:center;margin-top:6px"><button class="btn quiet" type="button" id="logMore" hidden>Show all</button></div>
+    <p class="logsec-note" id="logNote">Tap any reading, then “Add entry”, to log when an input was down, had an issue, or was worked on. Entries are saved in this browser — download the CSV now and then to keep a copy in your records, or to move them to another phone with Import.</p>
+  </section>
   <details id="diag">
     <summary>Diagnostics — raw Sensaphone responses</summary>
     <p id="diagNote" style="margin:8px 0 6px">Nothing fetched yet.</p>
@@ -552,7 +621,7 @@
   <footer>
     <div class="biz">Pham's Chickens LLC</div>
     <div class="addr">1875 Goshen Road<br>Carthage, MS 39051<br>United States</div>
-    <div class="fine">Live data from Sensaphone.net · refreshes every 60 seconds while open · your sign-in goes straight from this browser to rest.sensaphone.net and is never stored in the page · flock dates and targets are saved in this browser only, and nothing on this page changes a setting on Sensaphone.net.</div>
+    <div class="fine">Live data from Sensaphone.net · refreshes every 60 seconds while open · your sign-in goes straight from this browser to rest.sensaphone.net and is never stored in the page · flock dates, targets, the temperature scale and the sensor log are saved in this browser only, and nothing on this page changes a setting on Sensaphone.net.</div>
     <div class="fine" id="themeNote" style="margin-top:0"></div>
   </footer>
 </main>
@@ -570,11 +639,17 @@
       <button type="button" data-h="72" aria-pressed="false">3 d</button>
       <button type="button" data-h="168" aria-pressed="false">7 d</button>
       <button type="button" data-h="720" aria-pressed="false">30 d</button>
+      <span style="flex:1"></span>
+      <button type="button" id="shScale" hidden title="Tap to switch between fitting the graph to its readings and the fixed scale set under “Scale” on the houses bar">Scale: auto</button>
     </div>
     <div class="stats" id="shStats"></div>
     <div class="chart" id="shChart"></div>
     <div class="legend" id="shLegend"></div>
     <div class="note" id="shNote"></div>
+    <div class="logsec">
+      <div class="loghead"><span class="eyebrow" id="shLogHead">Log for this input</span><button class="btn" type="button" id="shLogAdd">+ Add entry</button></div>
+      <ul class="loglist" id="shLog"></ul>
+    </div>
   </div>
 </div>
 
@@ -627,11 +702,94 @@
     </details>
     <div class="err" id="flockErr" hidden></div>
     <p class="hint" id="flockShareNote">Saved in this browser only. Use “Copy link” and text it to the crew so their phones pick up the same dates.</p>
+    <div class="linkbox" id="flLinkBox" hidden>
+      <input type="text" id="flLink" readonly aria-label="Link that carries these flock settings" spellcheck="false" autocapitalize="off">
+      <button class="btn" type="button" id="flLinkCopy">Copy</button>
+      <button class="btn quiet" type="button" id="flLinkShare" hidden>Share…</button>
+    </div>
     <div class="row wrap">
       <button class="btn quiet" type="button" id="flClear" title="Between flocks: stop showing age and targets">Houses are empty</button>
       <button class="btn" type="button" id="flShare">Copy link</button>
       <span style="flex:1"></span>
       <button class="btn quiet" type="button" id="flCancel">Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+
+<div class="gate" id="logGate" hidden>
+  <form class="card flock-card" id="logForm" autocomplete="off">
+    <h2 id="lgTitle">New log entry</h2>
+    <p id="lgSub"></p>
+    <div class="field">
+      <label for="lgZone">Input</label>
+      <select id="lgZone"></select>
+    </div>
+    <div class="field">
+      <label>What happened</label>
+      <div class="kind" id="lgKind" role="group" aria-label="Type of entry">
+        <button type="button" data-k="down" aria-pressed="false">✕ Down</button>
+        <button type="button" data-k="issue" aria-pressed="false">! Issue</button>
+        <button type="button" data-k="maint" aria-pressed="false">🔧 Maintenance</button>
+        <button type="button" data-k="note" aria-pressed="false">✎ Note</button>
+      </div>
+    </div>
+    <div class="fl-grid">
+      <div class="field">
+        <label for="lgFrom">From</label>
+        <div class="when"><input id="lgFrom" type="datetime-local" required><button class="btn quiet" type="button" data-now="lgFrom" title="Set to the current time">Now</button></div>
+      </div>
+      <div class="field">
+        <label for="lgTo">To</label>
+        <div class="when"><input id="lgTo" type="datetime-local"><button class="btn quiet" type="button" data-now="lgTo" title="Set to the current time">Now</button></div>
+      </div>
+    </div>
+    <label class="check"><input id="lgOpen" type="checkbox"> Still going on — no end time yet</label>
+    <p class="hint" style="margin-top:0">Leave “To” blank to log a single moment (“replaced the probe at 2:15”). Fill both in for a stretch it was down, in trouble, or being worked on.</p>
+    <div class="field">
+      <label for="lgText">Notes</label>
+      <textarea id="lgText" rows="3" placeholder="What was wrong, what was done, parts replaced, who was called…"></textarea>
+    </div>
+    <div class="field">
+      <label for="lgBy">Logged by</label>
+      <input id="lgBy" type="text" autocomplete="name" autocapitalize="words" placeholder="Your name">
+    </div>
+    <div class="err" id="lgErr" hidden></div>
+    <div class="row wrap">
+      <button class="btn quiet" type="button" id="lgDelete" style="color:var(--crit)" hidden>Delete</button>
+      <span style="flex:1"></span>
+      <button class="btn quiet" type="button" id="lgCancel">Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+
+<div class="gate" id="viewGate" hidden>
+  <form class="card flock-card" id="viewForm" autocomplete="off">
+    <h2>Temperature scale</h2>
+    <p>The range the temperature bars and graphs are drawn on. Display only — nothing here changes an alarm limit on Sensaphone.net.</p>
+    <div class="kind" id="vwMode" role="group" aria-label="Scale">
+      <button type="button" data-m="auto" aria-pressed="true">Auto · fit each graph</button>
+      <button type="button" data-m="fixed" aria-pressed="false">Fixed · same on every house</button>
+    </div>
+    <div id="vwFixed">
+      <div class="fl-grid">
+        <label>Min °F<input id="vwMin" type="number" inputmode="decimal" min="-40" max="150" step="1"></label>
+        <label>Max °F<input id="vwMax" type="number" inputmode="decimal" min="-40" max="150" step="1"></label>
+      </div>
+      <div class="row wrap" style="justify-content:flex-start;margin-top:8px" id="vwPresets">
+        <button class="btn" type="button" data-p="50,100">50–100</button>
+        <button class="btn" type="button" data-p="60,100">60–100</button>
+        <button class="btn" type="button" data-p="65,95">65–95</button>
+        <button class="btn" type="button" data-p="70,90">70–90</button>
+      </div>
+      <p class="hint">Every house is drawn on the same scale, so a flat line means a steady house and the houses can be compared at a glance. A reading outside the range still shows — that graph stretches to fit it. Alarm limits stay marked as the green band.</p>
+    </div>
+    <p class="hint" id="vwAutoNote">Each bar runs from the house's low alarm limit to its high one, and each graph zooms to its own readings.</p>
+    <p class="hint">Saved in this browser. The “Copy link” in Flock settings carries this to the crew's phones too.</p>
+    <div class="err" id="vwErr" hidden></div>
+    <div class="row">
+      <button class="btn quiet" type="button" id="vwCancel">Cancel</button>
       <button class="btn primary" type="submit">Save</button>
     </div>
   </form>
@@ -1234,12 +1392,13 @@
     return '<li class="axis" aria-hidden="true"><div class="sx">' + labels.join('') + '</div></li>';
   }
   function renderDigRow(z) {
-    var st = digState(z), sp = renderStrip(z);
+    var st = digState(z), sp = renderStrip(z), lp = logPills(z);
     return '<li class="' + z.sev + (st.cls === 'run' ? ' run' : '') + ' row" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button" title="' + esc(z.name) + (z.canonical ? ' (' + esc(z.canonical) + ')' : '') + ' — tap for the last 24 h and what this input means">' +
       '<div class="rh"><span class="k">' + esc(z.catLabel) + '</span>' +
       '<span class="v"><span class="i">' + digIcon(st) + '</span>' + esc(st.word) +
       (sp.since ? '<small>· ' + esc(sp.since) + '</small>' : '') +
       (st.more ? '<small>· ' + esc(st.more) + '</small>' : '') + '</span></div>' +
+      (lp ? '<div class="lp">' + lp + '</div>' : '') +
       sp.html + '</li>';
   }
   var stripBusy = false;
@@ -1315,6 +1474,7 @@
     Object.keys(f.houses).forEach(function (k) { parts.push('h' + k + '=' + f.houses[k]); });
     if (f.tol !== 4) { parts.push('tol=' + f.tol); }
     if (f.curve) { parts.push('curve=' + f.curve.map(function (r) { return r[0] + ':' + r[1]; }).join(',')); }
+    parts.push('scale=' + (view.scale === 'fixed' ? view.min + ':' + view.max : 'auto'));   // the temperature scale travels with the flock dates
     return '#' + parts.join('&');
   }
   function importFlockHash() {
@@ -1328,12 +1488,25 @@
       else if (/^h\d+$/.test(k)) { f.houses[k.slice(1)] = v; }
       else if (k === 'tol') { f.tol = v; }
       else if (k === 'curve') { f.curve = v.split(',').map(function (p) { return p.split(':'); }); }
+      else if (k === 'scale') {
+        var sp = v.split(':');
+        view = cleanView(sp.length === 2 ? { scale: 'fixed', min: sp[0], max: sp[1] } : { scale: 'auto', min: view.min, max: view.max });
+        saveView();
+      }
     });
     flock = cleanFlock(f);
     saveFlock();
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    // say so at the top of the page for a couple of minutes, so whoever opened the link can see it took
+    var bits = [];
+    if (flock.placed) { bits.push('chicks placed ' + fmtDay(dateMs(flock.placed))); }
+    Object.keys(flock.houses).sort(function (a, b) { return a - b; }).forEach(function (k) { bits.push('house ' + k + ' ' + fmtDay(dateMs(flock.houses[k]))); });
+    if (view.scale === 'fixed') { bits.push('temperature scale ' + fmtScale(view.min) + '–' + fmtScale(view.max) + '°'); }
+    linkNotice = 'Settings loaded from the link' + (bits.length ? ': ' + bits.join(', ') : ' — the houses are marked empty') + '.';
+    setTimeout(function () { linkNotice = null; if (lastDevices) { render(lastDevices); } }, 2 * 60000);
     return true;
   }
+  var linkNotice = null;
 
   function placedFor(n) { return flock.houses[String(n)] || flock.placed || ''; }
   function ageAt(placed, t) { return (t - dateMs(placed)) / 86400000; }                       // in days, with the fraction
@@ -1411,13 +1584,22 @@
     if (h.outlier != null) {
       bits.push('<span class="pill off" title="Compared with the middle of the other houses. A hint from this page, not a Sensaphone alarm">' + Math.abs(h.outlier).toFixed(1) + '° ' + (h.outlier > 0 ? 'warmer' : 'cooler') + ' than the other houses</span>');
     }
-    return bits.length ? '<div class="flock">' + bits.join('') + '</div>' : '';
+    var t = h.temps[0];
+    if (t && fixedScale() && t.low != null && t.high != null) {   // on a fixed scale the bar's end labels show the scale, so the alarm limits move here
+      var bad = t.lowBad || t.highBad;
+      bits.push('<span class="pill' + (bad ? ' off' : '') + '" title="Alarm limits set on Sensaphone.net' + (bad ? ' — one of them is out of line with the other houses, see Setup checks' : '') + '">' + (bad ? '! ' : '') + 'limits ' + esc(fmtTemp(t.low)) + '–' + esc(fmtTemp(t.high)) + '°</span>');
+    }
+    if (t) { bits.push(logPills(t)); }
+    var html = bits.join('');
+    return html ? '<div class="flock">' + html + '</div>' : '';
   }
 
   function renderFlockBar(houses) {
     var btn = function (label) { return '<button class="btn" type="button" data-flock-open>' + label + '</button>'; };
+    var sc = fixedScale();
+    var viewBtn = '<button class="btn" type="button" data-view-open title="Change the min and max the temperature bars and graphs are drawn on">Scale: ' + (sc ? esc(fmtScale(sc.lo) + '–' + fmtScale(sc.hi)) + '°' : 'auto') + '</button>';
     var set = houses.filter(function (h) { return h.flock; });
-    if (!set.length) { return '<span>Flock age and target temperatures are off.</span>' + btn('Set the placement date'); }
+    if (!set.length) { return '<span>Flock age and target temperatures are off.</span>' + btn('Set the placement date') + viewBtn; }
     var days = set.map(function (h) { return h.flock.day; });
     var lo = Math.min.apply(null, days), hi = Math.max.apply(null, days);
     var tg = set.map(function (h) { return h.flock.target; }).filter(function (v) { return v != null; });
@@ -1429,7 +1611,7 @@
     if (tLo != null) { txt += ' · target ' + esc(fmtTemp(tLo)) + (tHi - tLo >= 0.1 ? '–' + esc(fmtTemp(tHi)) : '') + ' °F now'; }
     if (set.length < houses.length) { txt += ' · ' + (houses.length - set.length) + ' empty'; }
     if (hi > 75) { txt += ' · <span style="color:var(--warn)">that is an old flock — new birds in? Update the date.</span>'; }
-    return '<span>' + txt + '</span>' + btn('Flock settings');
+    return '<span>' + txt + '</span>' + btn('Flock settings') + viewBtn;
   }
 
   // ---------- 24 h temperature trend on each house card ----------
@@ -1459,9 +1641,16 @@
     recs.forEach(function (r) { if (r.v < lo.v) { lo = r; } if (r.v > hi.v) { hi = r; } });
     var yLo = lo.v, yHi = hi.v;
     var tg = targetSeries(h.n, t0, t1, 12);
-    tg.forEach(function (p) { if (p.v > yLo - 12 && p.v < yHi + 12) { yLo = Math.min(yLo, p.v); yHi = Math.max(yHi, p.v); } });
-    if (yHi - yLo < 8) { var mid = (yHi + yLo) / 2; yLo = mid - 4; yHi = mid + 4; }   // a quiet day should look quiet, not like a mountain range
-    var pad = (yHi - yLo) * 0.1; yLo -= pad; yHi += pad;
+    var fs = fixedScale();
+    if (fs) {   // one scale for every house: the axis is at least min–max, and only grows when a reading falls outside it
+      var fpad = (fs.hi - fs.lo) * 0.03;
+      yLo = yLo < fs.lo ? yLo - fpad : fs.lo;
+      yHi = yHi > fs.hi ? yHi + fpad : fs.hi;
+    } else {
+      tg.forEach(function (p) { if (p.v > yLo - 12 && p.v < yHi + 12) { yLo = Math.min(yLo, p.v); yHi = Math.max(yHi, p.v); } });
+      if (yHi - yLo < 8) { var mid = (yHi + yLo) / 2; yLo = mid - 4; yHi = mid + 4; }   // a quiet day should look quiet, not like a mountain range
+      var pad = (yHi - yLo) * 0.1; yLo -= pad; yHi += pad;
+    }
     var H = 38;
     var X = function (tt) { return ((tt - t0) / (t1 - t0) * 1000).toFixed(1); };
     var Y = function (v) { return (H - (v - yLo) / (yHi - yLo) * H).toFixed(1); };
@@ -1587,15 +1776,25 @@
           : '<span class="none">No temperature reading</span>') +
         '<span class="lbl">' + esc(t.name) + (t.canonical ? ' · ' + esc(t.canonical) : '') + '</span></div>';
       if (tv != null && t.low != null && t.high != null && t.high > t.low) {
-        var n = num(t.value);
+        var n = num(t.value), fs = fixedScale();
         var out = n < t.low || n > t.high;
-        var tgt = h.flock && h.flock.target != null && h.flock.target >= t.low && h.flock.target <= t.high ? h.flock.target : null;
-        tempHtml += '<div class="range" title="Alarm limits ' + esc(t.low) + ' to ' + esc(t.high) + (tgt != null ? ' · gold mark = target ' + esc(fmtTemp(tgt)) + ' for the flock\'s age' : '') + '">' +
-          '<span class="lim num' + (t.lowBad ? ' bad' : '') + '"' + (t.lowBad ? ' title="This low limit is out of line with the other houses — see Setup checks"' : '') + '>' + (t.lowBad ? '! ' : '') + esc(fmtTemp(t.low)) + '</span>' +
-          '<div class="track"><div class="band" style="left:' + pct(t.low, t.low, t.high).toFixed(1) + '%;right:' + (100 - pct(t.high, t.low, t.high)).toFixed(1) + '%"></div>' +
-          (tgt != null ? '<div class="tgt" style="left:' + pct(tgt, t.low, t.high).toFixed(1) + '%"></div>' : '') +
-          '<div class="dot' + (out ? ' out' : '') + '" style="left:' + pct(n, t.low, t.high).toFixed(1) + '%"></div></div>' +
-          '<span class="lim num' + (t.highBad ? ' bad' : '') + '">' + (t.highBad ? '! ' : '') + esc(fmtTemp(t.high)) + '</span></div>';
+        // auto: the bar runs from the low alarm limit to the high one. fixed: it runs min–max, the same on every house, with the limits as the green band
+        var P = fs
+          ? function (v) { return Math.max(0, Math.min(100, (v - fs.lo) / (fs.hi - fs.lo) * 100)); }
+          : function (v) { return pct(v, t.low, t.high); };
+        var tgOk = h.flock && h.flock.target != null && (fs ? (h.flock.target >= fs.lo && h.flock.target <= fs.hi) : (h.flock.target >= t.low && h.flock.target <= t.high));
+        var tgt = tgOk ? h.flock.target : null;
+        var title = 'Alarm limits ' + esc(fmtTemp(t.low)) + ' to ' + esc(fmtTemp(t.high)) + (fs ? ' (green band) · bar drawn on a ' + esc(fmtTemp(fs.lo)) + '–' + esc(fmtTemp(fs.hi)) + '° scale' : '') + (tgt != null ? ' · gold mark = target ' + esc(fmtTemp(tgt)) + ' for the flock\'s age' : '');
+        var endL = fs
+          ? '<span class="lim num sc" title="Bottom of the display scale">' + esc(fmtScale(fs.lo)) + '</span>'
+          : '<span class="lim num' + (t.lowBad ? ' bad' : '') + '"' + (t.lowBad ? ' title="This low limit is out of line with the other houses — see Setup checks"' : '') + '>' + (t.lowBad ? '! ' : '') + esc(fmtTemp(t.low)) + '</span>';
+        var endR = fs
+          ? '<span class="lim num sc" title="Top of the display scale">' + esc(fmtScale(fs.hi)) + '</span>'
+          : '<span class="lim num' + (t.highBad ? ' bad' : '') + '">' + (t.highBad ? '! ' : '') + esc(fmtTemp(t.high)) + '</span>';
+        tempHtml += '<div class="range' + (fs ? ' fixed' : '') + '" title="' + title + '">' + endL +
+          '<div class="track"><div class="band" style="left:' + P(t.low).toFixed(1) + '%;right:' + (100 - P(t.high)).toFixed(1) + '%"></div>' +
+          (tgt != null ? '<div class="tgt" style="left:' + P(tgt).toFixed(1) + '%"></div>' : '') +
+          '<div class="dot' + (out ? ' out' : '') + '" style="left:' + P(n).toFixed(1) + '%"></div></div>' + endR + '</div>';
       }
       tempHtml += renderFlockRow(h) + renderSpark(h);
     } else {
@@ -1608,9 +1807,10 @@
       var word = sevWord(z.sev, z);
       var show = (z.sev === 'good' && /^ok$/i.test(v)) ? 'OK' : (v && !/^ok$/i.test(v) ? v : word);
       if (z.sev === 'warn') { show = 'Pending'; }
+      var lp = logPills(z);
       return '<li class="' + z.sev + '" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button" title="' + esc(z.name) + (z.canonical ? ' (' + esc(z.canonical) + ')' : '') + ' — tap for history">' +
         '<span class="k">' + esc(z.catLabel) + '</span>' +
-        '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(show) + '</span></li>';
+        '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(show) + '</span>' + (lp ? '<div class="lp">' + lp + '</div>' : '') + '</li>';
     }).join('') + (anyRows ? renderAxis() : '');
     return '<article class="house ' + h.sev + '" id="house-' + h.n + '">' +
       '<header><h2>House ' + h.n + '</h2>' +
@@ -1633,7 +1833,8 @@
     var items = [];
     var pushKV = function (k, v, sev, zid) {
       if (v == null || v === '') { return; }
-      items.push('<div' + (zid != null ? ' data-zid="' + esc(zid) + '" tabindex="0" role="button"' : '') + '><div class="k">' + esc(k) + '</div><div class="v ' + (sev || '') + '">' + (sev ? '<span class="i">' + sevIcon(sev) + '</span>' : '') + esc(v) + '</div></div>');
+      var lp = zid != null ? logPills({ zone_id: zid }) : '';
+      items.push('<div' + (zid != null ? ' data-zid="' + esc(zid) + '" tabindex="0" role="button"' : '') + '><div class="k">' + esc(k) + '</div><div class="v ' + (sev || '') + '">' + (sev ? '<span class="i">' + sevIcon(sev) + '</span>' : '') + esc(v) + '</div>' + (lp ? '<div class="lp">' + lp + '</div>' : '') + '</div>');
     };
     var online = dev.is_online === true || /online/i.test(dev.connection_status || '');
     var offline = dev.is_online === false || /offline/i.test(dev.connection_status || '');
@@ -1659,7 +1860,8 @@
         v = 'Switched off'; cls = 'idle'; ico = '–';
         tip = 'This input is not enabled on Sensaphone.net, so it is not being monitored';
       }
-      return '<div data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button"' + (tip ? ' title="' + esc(tip) + '"' : '') + '><div class="k">' + esc(z.name) + '</div><div class="v ' + cls + '">' + (ico ? '<span class="i">' + ico + '</span>' : '') + esc(v) + (z.units ? ' ' + esc(z.units) : '') + '</div></div>';
+      var lp = logPills(z);
+      return '<div data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button"' + (tip ? ' title="' + esc(tip) + '"' : '') + '><div class="k">' + esc(z.name) + '</div><div class="v ' + cls + '">' + (ico ? '<span class="i">' + ico + '</span>' : '') + esc(v) + (z.units ? ' ' + esc(z.units) : '') + '</div>' + (lp ? '<div class="lp">' + lp + '</div>' : '') + '</div>';
     }).join('');
     if (model.spare && model.spare.length) {
       var nums = model.spare.map(function (z) { var m = /(\d+)/.exec(z.name); return m ? parseInt(m[1], 10) : null; }).filter(function (n) { return n != null; }).sort(function (a, b) { return a - b; });
@@ -1725,6 +1927,9 @@
         esc(otherAlarms.length === 1 ? 'The monitor unit has an input that needs attention.' : 'The monitor unit has ' + otherAlarms.length + ' inputs that need attention.') + '</strong><div class="chips">' + oChips + '</div></div></div>');
     }
     var nCrit = critH.length + critO.length, nWarn = warnH.length + warnO.length;
+    if (linkNotice) {
+      notices.push('<div class="notice info"><span class="ico">✓</span><div class="body"><strong>' + esc(linkNotice) + '</strong> This ' + (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? 'phone' : 'computer') + ' now shows the same flock age and targets as the one that sent it.</div></div>');
+    }
     $('notices').innerHTML = notices.join('');
     document.title = (anyOffline ? '🔴 OFFLINE — ' : nCrit ? '🔴 ' + nCrit + ' alarm — ' : nWarn ? '🟠 ' + nWarn + ' pending — ' : '') + FARM_NAME;
     $('notices').style.display = notices.length ? 'grid' : 'none';
@@ -1773,10 +1978,14 @@
       var detail = dg
         ? DIG[z.cat].attn + (function () { var sn = renderStrip(z).since; return sn ? ' · ' + esc(sn) : ''; })()
         : 'reads ' + esc(v || '—') + (z.units ? ' ' + esc(z.units) : '') + (z.low != null && z.high != null ? ' · limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) : '');
+      var lp = logPills(z);
       return '<li class="' + z.sev + '" data-zid="' + esc(z.zone_id) + '" tabindex="0" role="button"><span class="chip ' + z.sev + '"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(label) + '</span>' +
         '<span class="zn">' + esc(z.name) + '</span>' +
-        '<span class="zd num">' + (z.canonical ? esc(z.canonical) + ' · ' : '') + detail + '</span></li>';
+        '<span class="zd num">' + (z.canonical ? esc(z.canonical) + ' · ' : '') + detail + '</span>' + (lp ? '<span class="lp">' + lp + '</span>' : '') + '</li>';
     }).join('') : '<li class="empty" style="background:none;border:0;padding:6px 0">Everything is reading OK.</li>';
+
+    // sensor log (page-level list; the entries themselves live in this browser, not on Sensaphone.net)
+    renderLogSection();
 
     // diagnostics
     if (!showingSample) {
@@ -2043,13 +2252,20 @@
     var vals = recs.map(function (r) { return num(r.v); }).filter(function (v) { return v != null; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     var span = Math.max(hi - lo, 4);
-    if (z.low != null && z.high != null && z.high > z.low) {
-      if (z.low >= lo - span * 1.5) { lo = Math.min(lo, z.low); }
-      if (z.high <= hi + span * 1.5) { hi = Math.max(hi, z.high); }
-    }
     var tg = (z.cat === 'temp' && z.house != null) ? targetSeries(z.house, t1 - hours * 3600000, t1, 96) : [];
-    tg.forEach(function (p) { if (p.v >= lo - 15 && p.v <= hi + 15) { lo = Math.min(lo, p.v); hi = Math.max(hi, p.v); } });
-    var pad = (hi - lo) * 0.1 || 1; lo -= pad; hi += pad;
+    var fs = z.cat === 'temp' ? fixedScale() : null;
+    if (fs) {   // the fixed scale is the least the axis shows; it only grows when a reading falls outside it, so nothing is ever hidden
+      var fpad = (fs.hi - fs.lo) * 0.03;
+      lo = lo < fs.lo ? lo - fpad : fs.lo;
+      hi = hi > fs.hi ? hi + fpad : fs.hi;
+    } else {
+      if (z.low != null && z.high != null && z.high > z.low) {
+        if (z.low >= lo - span * 1.5) { lo = Math.min(lo, z.low); }
+        if (z.high <= hi + span * 1.5) { hi = Math.max(hi, z.high); }
+      }
+      tg.forEach(function (p) { if (p.v >= lo - 15 && p.v <= hi + 15) { lo = Math.min(lo, p.v); hi = Math.max(hi, p.v); } });
+      var pad = (hi - lo) * 0.1 || 1; lo -= pad; hi += pad;
+    }
     var X = function (t) { return ml + (t - t0) / (t1 - t0) * (W - ml - mr); };
     var Y = function (v) { return mt + (hi - v) / (hi - lo) * (H - mt - mb); };
     var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': z.name + ' history' });
@@ -2069,6 +2285,9 @@
         svg.appendChild(svgEl('text', { x: W - mr - 2, y: yl - 3, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--good)' }, (lim === z.low ? 'low ' : 'high ') + fmtTemp(lim)));
       });
     }
+    // logged down / issue / maintenance stretches, shaded behind the line
+    var nLogs = drawLogBands(svg, z, t0, t1, X, mt, H - mb, 'band');
+    if (nLogs) { container.setAttribute('data-logs', String(nLogs)); } else { container.removeAttribute('data-logs'); }
     // x ticks
     xTicks(t0, t1, hours).forEach(function (tk) {
       svg.appendChild(svgEl('line', { x1: X(tk.t), x2: X(tk.t), y1: H - mb, y2: H - mb + 4, stroke: 'var(--ink-3)', 'stroke-width': 1 }));
@@ -2128,9 +2347,10 @@
 
   function drawStates(container, recs, z, hours, logged) {
     container.innerHTML = '';
-    var W = Math.max(320, container.clientWidth || 600), H = 104;
-    var ml = 10, mr = 10, mt = 26, mb = 30, barH = 40;
     var t1 = Date.now(), t0 = t1 - hours * 3600000;
+    var hasLogs = logsInWindow(z, t0, t1).length > 0;
+    var W = Math.max(320, container.clientWidth || 600), H = hasLogs ? 122 : 104;   // room for a lane of logged stretches under the bar
+    var ml = 10, mr = 10, mt = 26, mb = hasLogs ? 48 : 30, barH = 40;
     var X = function (t) { return ml + (t - t0) / (t1 - t0) * (W - ml - mr); };
     var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': z.name + ' state history' });
     svg.appendChild(svgEl('rect', { x: ml, y: mt, width: W - ml - mr, height: barH, rx: 6, fill: STRIP_COL.unk }));
@@ -2162,6 +2382,7 @@
       var x = X(sg.t0), w = Math.max(1.5, X(sg.t1) - x);
       svg.appendChild(svgEl('rect', { x: x, y: mt, width: w, height: barH, fill: sg.color || (sg.alarm ? STRIP_COL.on : STRIP_COL.ok) }));
     });
+    var nLogs = hasLogs ? drawLogBands(svg, z, t0, t1, X, mt + barH + 8, mt + barH + 16, 'lane') : 0;
     xTicks(t0, t1, hours).forEach(function (tk) {
       svg.appendChild(svgEl('line', { x1: X(tk.t), x2: X(tk.t), y1: mt + barH, y2: mt + barH + 5, stroke: 'var(--ink-3)', 'stroke-width': 1 }));
       svg.appendChild(svgEl('text', { x: X(tk.t), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-2)' }, tk.label));
@@ -2186,7 +2407,7 @@
     svg.addEventListener('pointermove', move);
     svg.addEventListener('pointerdown', move);
     svg.addEventListener('pointerleave', function () { tip.style.display = 'none'; });
-    return { alarmMs: alarmMs, count: count, longest: longest, quiet: quiet };
+    return { alarmMs: alarmMs, count: count, longest: longest, quiet: quiet, logs: nLogs };
   }
 
   // ---------- history sheet ----------
@@ -2202,11 +2423,24 @@
     $('shSub').textContent = z.name + (z.canonical ? ' · ' + z.canonical : '') + ' · now ' + (dg ? digState(z).word : (stateText(z.value) || '—')) + (num(z.value) != null && z.cat === 'temp' ? ' ' + tempUnit(z) : '');
     $('shExplain').hidden = !dg;
     if (dg) { $('shExplain').textContent = digExplain(z); }
+    $('shScale').hidden = z.cat !== 'temp';
+    paintScaleBtn();
+    renderSheetLog();
     $('sheetBg').hidden = false;
     document.body.style.overflow = 'hidden';
     loadSheet();
   }
   function closeSheet() { $('sheetBg').hidden = true; document.body.style.overflow = ''; sheet.z = null; }
+  function paintScaleBtn() {
+    var fs = fixedScale();
+    $('shScale').textContent = 'Scale: ' + (fs ? fmtScale(fs.lo) + '–' + fmtScale(fs.hi) + '°' : 'auto');
+    $('shScale').setAttribute('aria-pressed', fs ? 'true' : 'false');
+  }
+  $('shScale').addEventListener('click', function () {   // quick flip between auto and the saved fixed range; the numbers themselves are set in the Scale dialog
+    view.scale = view.scale === 'fixed' ? 'auto' : 'fixed';
+    saveView();
+    afterViewChange();
+  });
   function loadSheet() {
     var z = sheet.z, dev = sheet.dev, hours = sheet.hours;
     if (!z) { return; }
@@ -2260,7 +2494,8 @@
         (z.low != null && z.high != null ? '<div><div class="k">Outside limits</div><div class="v num ' + (outN ? 'crit' : 'good') + '">' + outN + '</div></div>' : '');
       $('shLegend').innerHTML = '<span><i style="background:' + SERIES + '"></i>' + esc(z.name) + '</span>' +
         (chart.getAttribute('data-target') ? '<span><i style="background:var(--target)"></i>Target for the flock\'s age</span>' : '') +
-        (z.low != null && z.high != null ? '<span><i class="band" style="background:var(--good)"></i>Alarm limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) + ' ' + esc(unit) + '</span><span><i style="background:var(--crit);width:8px;height:8px;border-radius:50%"></i>Outside limits</span>' : '');
+        (z.low != null && z.high != null ? '<span><i class="band" style="background:var(--good)"></i>Alarm limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) + ' ' + esc(unit) + '</span><span><i style="background:var(--crit);width:8px;height:8px;border-radius:50%"></i>Outside limits</span>' : '') +
+        (chart.getAttribute('data-logs') ? logLegend() : '');
     } else {
       var st = drawStates(chart, recs, z, hours, logged);
       var mins = Math.round(st.alarmMs / 60000);
@@ -2279,17 +2514,25 @@
           (st.quiet ? '<span><i style="background:' + STRIP_COL.quiet + ';height:10px"></i>No alarm logged</span>' : '') +
           '<span><i style="background:' + STRIP_COL.unk + ';height:10px"></i>No record</span>'
         : '<span><i style="background:var(--good);height:10px"></i>OK</span><span><i style="background:var(--crit);height:10px"></i>Alarm</span>';
+      if (st.logs) { $('shLegend').innerHTML += logLegend(); }
     }
     $('shNote').textContent = note;
   }
   document.addEventListener('click', function (ev) {
+    var li = ev.target.closest ? ev.target.closest('[data-lid]') : null;
+    if (li) { ev.preventDefault(); openLogEntry(li.getAttribute('data-lid')); return; }
     var el = ev.target.closest ? ev.target.closest('[data-zid]') : null;
     if (el) { ev.preventDefault(); openSheet(el.getAttribute('data-zid')); }
   });
   document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('logGate').hidden) { closeLog(); return; }
+    if (ev.key === 'Escape' && !$('viewGate').hidden) { closeView(); return; }
     if (ev.key === 'Escape' && !$('sheetBg').hidden) { closeSheet(); return; }
     if (ev.key === 'Escape' && !$('flockGate').hidden) { closeFlock(); return; }
-    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.getAttribute && ev.target.getAttribute('data-zid')) { ev.preventDefault(); openSheet(ev.target.getAttribute('data-zid')); }
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.getAttribute) {
+      if (ev.target.getAttribute('data-lid')) { ev.preventDefault(); openLogEntry(ev.target.getAttribute('data-lid')); return; }
+      if (ev.target.getAttribute('data-zid')) { ev.preventDefault(); openSheet(ev.target.getAttribute('data-zid')); }
+    }
   });
   $('shClose').addEventListener('click', closeSheet);
   $('sheetBg').addEventListener('click', function (ev) { if (ev.target === $('sheetBg')) { closeSheet(); } });
@@ -2321,7 +2564,9 @@
     drawCurveRows(flock.curve || CURVE_DEFAULT);
     $('flCurveBox').open = false;
     $('flTol').value = flock.tol;
-    $('flockShareNote').textContent = 'Saved in this browser only. Use “Copy link” and text it to the crew so their phones pick up the same dates.';
+    $('flockShareNote').textContent = 'Saved in this browser only. Use “Copy link” and text it to the crew so their phones and PCs pick up the same dates.';
+    $('flShare').textContent = 'Copy link';
+    if (flock.placed || Object.keys(flock.houses).length) { showFlockLink(flockLink(flock)); } else { $('flLinkBox').hidden = true; }
     $('flockGate').hidden = false;
   }
   function closeFlock() { $('flockGate').hidden = true; }
@@ -2363,30 +2608,475 @@
     var b = ev.target.closest ? ev.target.closest('[data-c="x"]') : null;
     if (b && $('flCurve').querySelectorAll('.cr').length > 2) { b.parentNode.parentNode.removeChild(b.parentNode); }
   });
-  $('flShare').addEventListener('click', function () {   // saves, then hands over a link that carries the same dates to another phone
+  // "Copy link": the same on a phone and a PC — the link is always shown in a box, it is copied to the clipboard, and the button says so.
+  // "Share…" appears next to it wherever the browser has a share sheet (iPhone, Android, and Chrome/Edge on Windows and Mac).
+  function flockLink(f) { return location.origin + location.pathname + flockHash(f); }
+  function copyText(txt, inputEl) {   // -> Promise<boolean>. Selects the visible box and copies (works in every phone browser), then the clipboard API as a second try.
+    var ok = false;
+    try {
+      var el = inputEl;
+      if (!el) { el = document.createElement('textarea'); el.value = txt; el.setAttribute('readonly', ''); el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(el); }
+      el.focus(); el.select();
+      if (el.setSelectionRange) { el.setSelectionRange(0, txt.length); }
+      ok = !!(document.execCommand && document.execCommand('copy'));
+      if (el !== inputEl) { el.parentNode.removeChild(el); }
+    } catch (e) { ok = false; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(txt).then(function () { return true; }, function () { return ok; });
+    }
+    return Promise.resolve(ok);
+  }
+  function showFlockLink(url) {
+    $('flLink').value = url;
+    $('flLinkBox').hidden = false;
+    $('flLinkShare').hidden = !navigator.share;
+  }
+  function flockLinkNote(msg) { $('flockShareNote').textContent = msg; }
+  function flashCopied(btn, label) {
+    var was = btn.getAttribute('data-label') || btn.textContent;
+    btn.setAttribute('data-label', was);
+    btn.textContent = label;
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () { btn.textContent = was; }, 2200);
+  }
+  $('flShare').addEventListener('click', function () {   // saves, then hands over a link that carries the same dates to another phone or PC
     var f;
     try { f = readFlockForm(); } catch (e) { flockFormError(typeof e === 'string' ? e : 'Could not save those settings.'); return; }
     $('flockErr').hidden = true;
     applyFlock(f);
-    var url = location.origin + location.pathname + flockHash(f);
-    var note = $('flockShareNote');
-    var fallback = function () {
-      note.textContent = 'Saved. Copy this link and send it to the crew — opening it once sets the same dates on their phones:';
-      var inp = document.createElement('input');
-      inp.type = 'text'; inp.readOnly = true; inp.value = url;
-      inp.setAttribute('style', 'display:block;width:100%;margin-top:4px;font-size:13px;padding:6px 8px;border-radius:6px;border:1px solid var(--line-strong);background:var(--surface-2)');
-      inp.addEventListener('focus', function () { inp.select(); });
-      note.appendChild(inp);
-    };
-    if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '')) {
-      navigator.share({ title: FARM_NAME + ' monitor', text: 'Open this once to load the flock dates on your phone:', url: url }).then(function () { note.textContent = 'Saved. Opening the link once sets the same dates on that phone.'; }, fallback);
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(function () { note.textContent = 'Saved, and the link is copied. Text it to the crew — opening it once sets the same dates on their phones.'; }, fallback);
-    } else { fallback(); }
+    var url = flockLink(f);
+    showFlockLink(url);
+    copyText(url, $('flLink')).then(function (ok) {
+      flashCopied($('flShare'), ok ? 'Copied ✓' : 'Copy link');
+      flockLinkNote(ok
+        ? 'Saved, and the link is copied — paste it into a text or email to the crew. Opening it once sets the same dates on their phone or PC.'
+        : 'Saved. Tap Copy next to the link (or press and hold it) and send it to the crew — opening it once sets the same dates on their phone or PC.');
+    });
   });
+  $('flLinkCopy').addEventListener('click', function () {
+    copyText($('flLink').value, $('flLink')).then(function (ok) {
+      flashCopied($('flLinkCopy'), ok ? 'Copied ✓' : 'Copy');
+      flockLinkNote(ok ? 'Copied — paste it into a text or email to the crew.' : 'Press and hold the link to copy it.');
+    });
+  });
+  $('flLinkShare').addEventListener('click', function () {
+    if (!navigator.share) { return; }
+    navigator.share({ title: FARM_NAME + ' monitor', text: 'Open this once to load the flock dates on your phone:', url: $('flLink').value })
+      .then(function () { flockLinkNote('Sent. Opening the link once sets the same dates on that phone or PC.'); }, function () {});
+  });
+  $('flLink').addEventListener('focus', function () { var el = this; setTimeout(function () { el.select(); }, 0); });
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest ? ev.target.closest('[data-flock-open]') : null;
     if (b) { ev.preventDefault(); openFlock(); }
+  });
+
+  // ---------- temperature scale (display only) ----------
+  // auto: each bar runs limit-to-limit and each graph zooms to its readings. fixed: every house is drawn on the same min–max, so the
+  // houses compare at a glance and a steady house looks steady. A reading outside the range still shows — that graph grows to fit it.
+  var VIEW_KEY = 'apco.view.v1';
+  var VIEW_DEFAULT = { scale: 'auto', min: 60, max: 100 };
+  function cleanView(v) {
+    v = v && typeof v === 'object' ? v : {};
+    var out = { scale: v.scale === 'fixed' ? 'fixed' : 'auto', min: VIEW_DEFAULT.min, max: VIEW_DEFAULT.max };
+    var mn = num(v.min), mx = num(v.max);
+    if (mn != null && mx != null && mx - mn >= 5 && mn >= -40 && mx <= 150) { out.min = mn; out.max = mx; }
+    return out;
+  }
+  function loadView() { var s = null; try { s = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null'); } catch (e) {} return cleanView(s || VIEW_DEFAULT); }
+  function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(view)); } catch (e) {} }
+  var view = loadView();
+  function fixedScale() { return view.scale === 'fixed' ? { lo: view.min, hi: view.max } : null; }
+  function fmtScale(v) { return String(fmtTemp(v)).replace(/\.0$/, ''); }   // "60", not "60.0", for the ends of a fixed scale
+  function afterViewChange() {
+    if (lastDevices) { render(lastDevices); }
+    if (sheet.z && !$('sheetBg').hidden) { paintScaleBtn(); loadSheet(); }
+  }
+  function paintViewForm() {
+    var fixed = $('vwMode').querySelector('[data-m="fixed"]').getAttribute('aria-pressed') === 'true';
+    $('vwFixed').hidden = !fixed;
+    $('vwAutoNote').hidden = fixed;
+  }
+  function openView() {
+    $('vwErr').hidden = true;
+    Array.prototype.forEach.call($('vwMode').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-m') === view.scale ? 'true' : 'false'); });
+    $('vwMin').value = view.min; $('vwMax').value = view.max;
+    paintViewForm();
+    $('viewGate').hidden = false;
+  }
+  function closeView() { $('viewGate').hidden = true; }
+  $('vwMode').addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button[data-m]') : null;
+    if (!b) { return; }
+    Array.prototype.forEach.call($('vwMode').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    paintViewForm();
+  });
+  $('vwPresets').addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button[data-p]') : null;
+    if (!b) { return; }
+    var p = b.getAttribute('data-p').split(',');
+    $('vwMin').value = p[0]; $('vwMax').value = p[1];
+  });
+  $('viewForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var fixed = $('vwMode').querySelector('[data-m="fixed"]').getAttribute('aria-pressed') === 'true';
+    var mn = num($('vwMin').value), mx = num($('vwMax').value);
+    if (fixed && (mn == null || mx == null || mx - mn < 5 || mn < -40 || mx > 150)) {
+      $('vwErr').textContent = 'Enter a min and a max between −40 and 150 °F, at least 5° apart.'; $('vwErr').hidden = false; return;
+    }
+    view = cleanView({ scale: fixed ? 'fixed' : 'auto', min: mn != null ? mn : view.min, max: mx != null ? mx : view.max });
+    saveView();
+    closeView();
+    afterViewChange();
+  });
+  $('vwCancel').addEventListener('click', closeView);
+  $('viewGate').addEventListener('click', function (ev) { if (ev.target === $('viewGate')) { closeView(); } });
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('[data-view-open]') : null;
+    if (b) { ev.preventDefault(); openView(); }
+  });
+
+  // ---------- sensor log: what happened to an input, and when ----------
+  // Each entry: {id, zid, label, zname, house, cat, kind, from, to, open, text, by, created, updated}. from/to are ms; to = null with
+  // open = true means "still going on", to = null otherwise means a single moment. Saved in this browser (like the flock dates), and
+  // exported as CSV for the farm's records or to carry over to another phone.
+  var LOG_KEY = 'apco.log.v1';
+  var LOGBY_KEY = 'apco.logby.v1';
+  var LOG_KIND = {
+    down:  { label: 'Down',        icon: '✕', col: 'var(--crit)',   fill: 'var(--crit)' },
+    issue: { label: 'Issue',       icon: '!', col: 'var(--warn)',   fill: 'var(--warn)' },
+    maint: { label: 'Maintenance', icon: '🔧', col: 'var(--accent-text)', fill: 'var(--accent)' },
+    note:  { label: 'Note',        icon: '✎', col: 'var(--series)', fill: 'var(--series)' }
+  };
+  var LOG_SHOW = 6;      // page-level list shows this many before "Show all"
+  function cleanEntry(e) {
+    if (!e || typeof e !== 'object') { return null; }
+    var from = num(e.from), to = num(e.to);
+    if (e.zid == null || from == null || from < 946684800000 || from > Date.now() + 366 * 86400000) { return null; }
+    var open = e.open === true || e.open === 'true' || e.open === 1 || e.open === '1';
+    if (open) { to = null; }
+    if (to != null && to < from) { to = from; }
+    var out = {
+      id: String(e.id || newId()), zid: String(e.zid),
+      label: String(e.label || ''), zname: String(e.zname || ''), house: num(e.house), cat: String(e.cat || ''),
+      kind: LOG_KIND[e.kind] ? e.kind : 'note', from: from, to: to, open: open,
+      text: String(e.text == null ? '' : e.text).slice(0, 2000), by: String(e.by == null ? '' : e.by).slice(0, 80),
+      created: num(e.created) || from, updated: num(e.updated) || num(e.created) || Date.now()
+    };
+    if (!out.label) { out.label = out.house != null ? 'House ' + out.house + (out.zname ? ' · ' + out.zname : '') : (out.zname || 'Zone ' + out.zid); }
+    return out;
+  }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function loadLog() {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem(LOG_KEY) || 'null'); } catch (e) {}
+    var list = s && Array.isArray(s.entries) ? s.entries : [];
+    return { entries: list.map(cleanEntry).filter(Boolean) };
+  }
+  function saveLog() { try { localStorage.setItem(LOG_KEY, JSON.stringify(LOG)); } catch (e) {} }
+  var LOG = loadLog();
+  function byFromDesc(a, b) { return b.from - a.from || b.created - a.created; }
+  function logsFor(zid) { zid = String(zid); return LOG.entries.filter(function (e) { return e.zid === zid; }).sort(byFromDesc); }
+  function logEnd(e, now) { return e.open ? (now || Date.now()) : (e.to != null ? e.to : e.from); }
+  function logActiveAt(e, t) { return e.from <= t && (e.open || (e.to != null && e.to >= t)); }
+  function activeLogs(zid) { var now = Date.now(); return logsFor(zid).filter(function (e) { return logActiveAt(e, now); }); }
+  function logsInWindow(z, t0, t1) { return logsFor(z.zone_id).filter(function (e) { return e.from <= t1 && logEnd(e, t1) >= t0; }); }
+  function zoneLabel(z) { return z.house != null ? 'House ' + z.house + ' · ' + (z.catLabel || z.name) : z.name; }
+  function fmtStamp(t) {
+    var d = new Date(t), n = new Date();
+    return fmtDay(t) + (d.getFullYear() !== n.getFullYear() ? '/' + d.getFullYear() : '') + ' ' + fmtClock(t);
+  }
+  function fmtSpan(e) {   // "Tue 9/16 2:35 PM → 4:10 PM · 1h 35m", "since Tue 9/16 2:35 PM · ongoing 3h 12m", or just the moment
+    if (e.open) { return 'since ' + fmtStamp(e.from) + ' · ongoing ' + fmtAge(Date.now() - e.from); }
+    if (e.to == null) { return fmtStamp(e.from); }
+    var sameDay = new Date(e.from).toDateString() === new Date(e.to).toDateString();
+    return fmtStamp(e.from) + ' → ' + (sameDay ? fmtClock(e.to) : fmtStamp(e.to)) + (e.to > e.from ? ' · ' + fmtAge(e.to - e.from) : '');
+  }
+  // pills on the house cards: only entries that cover right now, so the crew sees "Maintenance · 2h" next to an input that is reading odd
+  function logPills(z) {
+    return activeLogs(z.zone_id).map(function (e) {
+      var k = LOG_KIND[e.kind];
+      return '<span class="pill log ' + e.kind + '" data-zid="' + esc(z.zone_id) + '" title="' + esc(k.label + ' · ' + fmtSpan(e) + (e.text ? ' — ' + e.text : '') + (e.by ? ' (' + e.by + ')' : '')) + '">' + k.icon + ' ' + k.label + (e.open ? ' · ' + esc(fmtAge(Date.now() - e.from)) : '') + '</span>';
+    }).join('');
+  }
+  var logKindsDrawn = {};   // kinds the last chart drew, so the legend lists only those
+  function logLegend() {
+    return Object.keys(LOG_KIND).filter(function (k) { return logKindsDrawn[k]; }).map(function (k) {
+      return k === 'note'
+        ? '<span><i style="background:var(--series)"></i>Note</span>'
+        : '<span><i class="band" style="background:' + LOG_KIND[k].fill + '"></i>Logged ' + LOG_KIND[k].label.toLowerCase() + '</span>';
+    }).join('');
+  }
+  // shade the logged stretches on a chart. mode 'band' = full-height tint behind the line; 'lane' = a solid strip between yTop and yBot
+  function drawLogBands(svg, z, t0, t1, X, yTop, yBot, mode) {
+    var list = logsInWindow(z, t0, t1);
+    list.sort(function (a, b) { return a.from - b.from; });
+    logKindsDrawn = {};
+    list.forEach(function (e, i) {
+      var k = LOG_KIND[e.kind], a = Math.max(e.from, t0), b = Math.min(logEnd(e, t1), t1);
+      logKindsDrawn[e.kind] = true;
+      var x0 = X(a), x1 = X(b);
+      if (mode === 'band') {
+        if (x1 - x0 > 0.5) { svg.appendChild(svgEl('rect', { x: x0, y: yTop, width: Math.max(1.5, x1 - x0), height: yBot - yTop, fill: k.fill, opacity: 0.16 })); }
+        svg.appendChild(svgEl('line', { x1: x0, x2: x0, y1: yTop, y2: yBot, stroke: k.col, 'stroke-width': 1.5, 'stroke-dasharray': '3 3', opacity: 0.9 }));
+        svg.appendChild(svgEl('text', { x: x0 + 4, y: yTop + 11 + (i % 2) * 12, 'font-size': 10.5, 'font-weight': 600, fill: k.col }, k.label));
+      } else {
+        svg.appendChild(svgEl('rect', { x: x0, y: yTop, width: Math.max(3, x1 - x0), height: yBot - yTop, rx: 2, fill: k.fill, opacity: 0.9 }));
+        svg.appendChild(svgEl('text', { x: x0 + 2, y: yTop - 3, 'font-size': 10, 'font-weight': 600, fill: k.col }, k.label));
+      }
+    });
+    return list.length;
+  }
+  function logItemHtml(e, withZone) {
+    var k = LOG_KIND[e.kind], live = logActiveAt(e, Date.now());
+    return '<li class="' + e.kind + '" data-lid="' + esc(e.id) + '" tabindex="0" role="button" title="Tap to edit or delete">' +
+      '<span class="lk">' + k.icon + ' ' + k.label + (live ? ' · now' : '') + '</span>' +
+      '<span class="lw num">' + esc(fmtSpan(e)) + '</span>' +
+      (withZone ? '<span class="lz">' + esc(e.label) + '</span>' : '') +
+      (e.text ? '<span class="lt">' + esc(e.text) + '</span>' : '') +
+      '<span class="lb">' + esc((e.by ? e.by + ' · ' : '') + 'added ' + fmtStamp(e.created) + (e.updated - e.created > 60000 ? ', edited ' + fmtStamp(e.updated) : '')) + '</span></li>';
+  }
+  function renderSheetLog() {
+    var z = sheet.z;
+    if (!z) { return; }
+    var list = logsFor(z.zone_id);
+    $('shLogHead').textContent = 'Log for this input' + (list.length ? ' · ' + list.length : '');
+    $('shLog').innerHTML = list.length ? list.map(function (e) { return logItemHtml(e, false); }).join('')
+      : '<li class="empty">Nothing logged for this input yet. “Add entry” records when it was down, had an issue, or was worked on, with notes — and the stretch shows on the graph above.</li>';
+  }
+  var logFilterVal = 'all', logShowAll = false;
+  function renderLogSection() {
+    var all = LOG.entries.slice().sort(byFromDesc), now = Date.now();
+    // filter choices: everything, what is happening now, then each house and the unit that has entries
+    var houses = {}, unit = false;
+    all.forEach(function (e) { if (e.house != null) { houses[e.house] = 1; } else { unit = true; } });
+    var opts = [['all', 'All entries'], ['active', 'Happening now']];
+    Object.keys(houses).map(Number).sort(function (a, b) { return a - b; }).forEach(function (n) { opts.push(['h' + n, 'House ' + n]); });
+    if (unit) { opts.push(['unit', 'Monitor unit / other']); }
+    if (!opts.some(function (o) { return o[0] === logFilterVal; })) { logFilterVal = 'all'; }
+    $('logFilter').innerHTML = opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === logFilterVal ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
+    var list = all.filter(function (e) {
+      if (logFilterVal === 'active') { return logActiveAt(e, now); }
+      if (logFilterVal === 'unit') { return e.house == null; }
+      if (/^h\d+$/.test(logFilterVal)) { return e.house === parseInt(logFilterVal.slice(1), 10); }
+      return true;
+    });
+    var active = all.filter(function (e) { return logActiveAt(e, now); }).length;
+    $('logHead').textContent = 'Sensor log' + (all.length ? ' · ' + all.length + (all.length === 1 ? ' entry' : ' entries') + (active ? ' · ' + active + ' happening now' : '') : '');
+    var shown = logShowAll ? list : list.slice(0, LOG_SHOW);
+    $('logAll').innerHTML = shown.length ? shown.map(function (e) { return logItemHtml(e, true); }).join('')
+      : '<li class="empty">' + (all.length ? 'No entries match that filter.' : 'No entries yet. Tap a reading on a house card and use “Add entry”, or “+ Add entry” here.') + '</li>';
+    $('logMore').hidden = list.length <= LOG_SHOW;
+    $('logMore').textContent = logShowAll ? 'Show fewer' : 'Show all ' + list.length;
+    $('logCsv').disabled = !all.length; $('logCopy').disabled = !all.length;
+  }
+  function afterLogChange() {
+    saveLog();
+    if (lastDevices) { render(lastDevices); } else { renderLogSection(); }
+    if (sheet.z && !$('sheetBg').hidden) { renderSheetLog(); loadSheet(); }
+  }
+  $('logFilter').addEventListener('change', function () { logFilterVal = $('logFilter').value; logShowAll = false; renderLogSection(); });
+  $('logMore').addEventListener('click', function () { logShowAll = !logShowAll; renderLogSection(); });
+
+  // --- the entry form ---
+  var logEdit = { id: null, zid: null };
+  function toInput(ms) { var d = new Date(ms), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function fromInput(s) { var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime() : null; }
+  function roundDown5(ms) { return ms - (ms % (5 * 60000)); }
+  function setKind(k) { Array.prototype.forEach.call($('lgKind').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-k') === k ? 'true' : 'false'); }); }
+  function getKind() { var b = $('lgKind').querySelector('[aria-pressed="true"]'); return b ? b.getAttribute('data-k') : 'note'; }
+  function zoneChoices(selZid, fallbackLabel) {   // every named input, houses first
+    var zs = [];
+    if (!showingSample) {
+      (lastDevices || []).forEach(function (dev) { dev.zones.forEach(function (z) { if (z.house != null || z.cat === 'unit' || (z.cat === 'loose' && !isGeneric(z))) { zs.push(z); } }); });
+      zs.sort(function (a, b) {
+        var ha = a.house != null ? a.house : 1e6, hb = b.house != null ? b.house : 1e6;
+        if (ha !== hb) { return ha - hb; }
+        var oa = a.cat === 'temp' ? -1 : CAT_ORDER.indexOf(a.cat), ob = b.cat === 'temp' ? -1 : CAT_ORDER.indexOf(b.cat);
+        return oa - ob || String(a.name).localeCompare(String(b.name));
+      });
+    }
+    var seen = {}, opts = [];
+    zs.forEach(function (z) {
+      var id = String(z.zone_id); if (seen[id]) { return; } seen[id] = 1;
+      opts.push('<option value="' + esc(id) + '"' + (id === String(selZid) ? ' selected' : '') + '>' + esc(zoneLabel(z)) + '</option>');
+    });
+    if (selZid != null && !seen[String(selZid)]) { opts.unshift('<option value="' + esc(selZid) + '" selected>' + esc(fallbackLabel || ('Zone ' + selZid)) + '</option>'); }
+    return opts.join('');
+  }
+  function openLog(zid, id) {
+    var e = id ? LOG.entries.filter(function (x) { return x.id === id; })[0] : null;
+    if (!e && (zid == null || showingSample || !auth)) { if (showingSample || !auth) { openGate(); } return; }   // new entries need the live zone list so they attach to the right input
+    logEdit = { id: e ? e.id : null, zid: e ? e.zid : String(zid) };
+    var it = zoneIndex[String(logEdit.zid)], z = it ? it.z : null;
+    $('lgTitle').textContent = e ? 'Edit log entry' : 'New log entry';
+    $('lgSub').textContent = z ? zoneLabel(z) + ' · reads ' + (isDig(z) && z.house != null ? digState(z).word : (stateText(z.value) || '—') + (z.cat === 'temp' && num(z.value) != null ? ' ' + tempUnit(z) : '')) + ' right now' : (e ? e.label : '');
+    $('lgZone').innerHTML = zoneChoices(logEdit.zid, e ? e.label : '');
+    $('lgZone').disabled = showingSample;
+    // a sensible starting type: an input in alarm is probably "down", a pending one an "issue", anything else is being worked on
+    setKind(e ? e.kind : (z && z.sev === 'crit' ? 'down' : z && z.sev === 'warn' ? 'issue' : 'maint'));
+    $('lgFrom').value = toInput(e ? e.from : roundDown5(Date.now()));
+    $('lgTo').value = e && e.to != null ? toInput(e.to) : '';
+    $('lgOpen').checked = !!(e && e.open);
+    $('lgTo').disabled = $('lgOpen').checked;
+    $('lgText').value = e ? e.text : '';
+    var by = ''; try { by = localStorage.getItem(LOGBY_KEY) || ''; } catch (x) {}
+    $('lgBy').value = e ? e.by : by;
+    $('lgDelete').hidden = !e;
+    $('lgErr').hidden = true;
+    $('logGate').hidden = false;
+    setTimeout(function () { $('lgText').focus(); }, 50);
+  }
+  function openLogEntry(id) { var e = LOG.entries.filter(function (x) { return x.id === id; })[0]; if (e) { openLog(e.zid, e.id); } }
+  function closeLog() { $('logGate').hidden = true; }
+  function logFormError(msg) { $('lgErr').textContent = msg; $('lgErr').hidden = false; }
+  $('lgKind').addEventListener('click', function (ev) { var b = ev.target.closest ? ev.target.closest('button[data-k]') : null; if (b) { setKind(b.getAttribute('data-k')); } });
+  $('lgOpen').addEventListener('change', function () { $('lgTo').disabled = $('lgOpen').checked; if ($('lgOpen').checked) { $('lgTo').value = ''; } });
+  $('logForm').addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button[data-now]') : null;
+    if (!b) { return; }
+    var inp = $(b.getAttribute('data-now'));
+    if (inp.id === 'lgTo') { $('lgOpen').checked = false; inp.disabled = false; }
+    inp.value = toInput(Date.now());
+  });
+  $('logForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var from = fromInput($('lgFrom').value), open = $('lgOpen').checked, to = open ? null : fromInput($('lgTo').value);
+    if (from == null) { logFormError('Pick when it started.'); return; }
+    if (from > Date.now() + 86400000) { logFormError('The start time is in the future.'); return; }
+    if (!open && $('lgTo').value && to == null) { logFormError('The end time does not look right.'); return; }
+    if (to != null && to < from) { logFormError('The end time is before the start time.'); return; }
+    var zid = $('lgZone').value || logEdit.zid, it = zoneIndex[String(zid)], z = it ? it.z : null;
+    var prev = logEdit.id ? LOG.entries.filter(function (x) { return x.id === logEdit.id; })[0] : null;
+    var by = $('lgBy').value.trim();
+    var e = cleanEntry({
+      id: logEdit.id || newId(), zid: zid,
+      label: z ? zoneLabel(z) : (prev ? prev.label : ''), zname: z ? z.name : (prev ? prev.zname : ''), house: z ? z.house : (prev ? prev.house : null), cat: z ? z.cat : (prev ? prev.cat : ''),
+      kind: getKind(), from: from, to: to, open: open, text: $('lgText').value.trim(), by: by,
+      created: prev ? prev.created : Date.now(), updated: Date.now()
+    });
+    if (!e) { logFormError('Could not save that entry.'); return; }
+    LOG.entries = LOG.entries.filter(function (x) { return x.id !== e.id; }).concat([e]);
+    try { if (by) { localStorage.setItem(LOGBY_KEY, by); } } catch (x) {}
+    closeLog();
+    afterLogChange();
+  });
+  $('lgDelete').addEventListener('click', function () {
+    if (!logEdit.id) { return; }
+    if ($('lgDelete').getAttribute('data-armed') !== '1') { $('lgDelete').setAttribute('data-armed', '1'); $('lgDelete').textContent = 'Tap again to delete'; return; }
+    LOG.entries = LOG.entries.filter(function (x) { return x.id !== logEdit.id; });
+    closeLog();
+    afterLogChange();
+  });
+  function resetDelete() { $('lgDelete').removeAttribute('data-armed'); $('lgDelete').textContent = 'Delete'; }
+  $('lgCancel').addEventListener('click', closeLog);
+  $('logGate').addEventListener('click', function (ev) { if (ev.target === $('logGate')) { closeLog(); } });
+  new MutationObserver(function () { if ($('logGate').hidden) { resetDelete(); } }).observe($('logGate'), { attributes: true, attributeFilter: ['hidden'] });
+  $('shLogAdd').addEventListener('click', function () { if (sheet.z) { openLog(sheet.z.zone_id, null); } });
+  $('logAddAny').addEventListener('click', function () {
+    if (showingSample || !auth) { openGate(); return; }
+    // start on the first house temperature; the form's Input list lets them pick another
+    var first = null;
+    (lastDevices || []).forEach(function (dev) { dev.zones.forEach(function (z) { if (!first && z.house != null) { first = z; } }); });
+    if (!first) { (lastDevices || []).forEach(function (dev) { dev.zones.forEach(function (z) { if (!first) { first = z; } }); }); }
+    if (first) { openLog(first.zone_id, null); }
+  });
+
+  // --- CSV out and in (the same columns both ways, so a file from one phone loads on another) ---
+  var CSV_HEAD = ['id', 'house', 'input', 'type', 'from', 'to', 'ongoing', 'duration_min', 'notes', 'logged_by', 'zone_id', 'zone_name', 'created', 'updated'];
+  function csvCell(v) { v = v == null ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function stampCsv(t) { if (t == null) { return ''; } var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function parseStamp(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(s || '').trim()); if (m) { return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime(); } var n = num(s); return n != null && n > 946684800000 ? n : null; }
+  function logCsv() {
+    var rows = [CSV_HEAD].concat(LOG.entries.slice().sort(byFromDesc).map(function (e) {
+      var end = e.open ? null : e.to;
+      return [e.id, e.house != null ? e.house : '', e.label, LOG_KIND[e.kind].label, stampCsv(e.from), stampCsv(end), e.open ? 'yes' : '', end != null ? Math.round((end - e.from) / 60000) : '', e.text, e.by, e.zid, e.zname, stampCsv(e.created), stampCsv(e.updated)];
+    }));
+    return rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+  }
+  function logText() {
+    return LOG.entries.slice().sort(byFromDesc).map(function (e) {
+      return fmtSpan(e) + ' · ' + e.label + ' · ' + LOG_KIND[e.kind].label + (e.text ? ' — ' + e.text : '') + (e.by ? ' (' + e.by + ')' : '');
+    }).join('\n');
+  }
+  function parseCsv(text) {   // -> rows of cells; handles quoted cells with commas, quotes and line breaks
+    var rows = [], row = [], cell = '', q = false;
+    text = String(text || '').replace(/^﻿/, '');
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else { q = false; } } else { cell += c; } }
+      else if (c === '"') { q = true; }
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') { i++; } row.push(cell); rows.push(row); row = []; cell = ''; }
+      else { cell += c; }
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return x !== ''; }); });
+  }
+  function importCsv(text) {   // -> {added, updated, skipped}; merges by id, newer "updated" wins
+    var rows = parseCsv(text);
+    if (rows.length < 2) { return { added: 0, updated: 0, skipped: 0, bad: true }; }
+    var head = rows[0].map(function (h) { return h.trim().toLowerCase(); }), col = function (r, k) { var i = head.indexOf(k); return i >= 0 ? r[i] : ''; };
+    if (head.indexOf('from') < 0 || (head.indexOf('zone_id') < 0 && head.indexOf('input') < 0)) { return { added: 0, updated: 0, skipped: 0, bad: true }; }
+    var kindOf = function (s) { s = String(s || '').toLowerCase(); for (var k in LOG_KIND) { if (LOG_KIND[k].label.toLowerCase() === s || k === s) { return k; } } return 'note'; };
+    var byId = {}; LOG.entries.forEach(function (e) { byId[e.id] = e; });
+    var added = 0, updated = 0, skipped = 0;
+    rows.slice(1).forEach(function (r) {
+      var from = parseStamp(col(r, 'from'));
+      var zid = col(r, 'zone_id') || ('x:' + col(r, 'input'));
+      var hm = /house\s*(\d+)/i.exec(col(r, 'input') || '');
+      var e = cleanEntry({
+        id: col(r, 'id') || newId(), zid: zid, label: col(r, 'input'), zname: col(r, 'zone_name'),
+        house: col(r, 'house') !== '' ? col(r, 'house') : (hm ? hm[1] : null), cat: '',
+        kind: kindOf(col(r, 'type')), from: from, to: parseStamp(col(r, 'to')), open: /^(yes|true|1)$/i.test(col(r, 'ongoing')),
+        text: col(r, 'notes'), by: col(r, 'logged_by'), created: parseStamp(col(r, 'created')) || from, updated: parseStamp(col(r, 'updated')) || from
+      });
+      if (!e) { skipped++; return; }
+      var cur = byId[e.id];
+      if (!cur) { byId[e.id] = e; added++; }
+      else if (e.updated > cur.updated) { byId[e.id] = e; updated++; }
+      else { skipped++; }
+    });
+    LOG.entries = Object.keys(byId).map(function (k) { return byId[k]; });
+    return { added: added, updated: updated, skipped: skipped };
+  }
+  function download(name, text, type) {
+    var blob = new Blob([text], { type: type || 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) { a.parentNode.removeChild(a); } }, 1500);
+  }
+  function logNoteMsg(msg) { var n = $('logNote'); n.textContent = msg; n.style.color = 'var(--ink-2)'; }
+  $('logCsv').addEventListener('click', function () {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    download('phams-chickens-sensor-log-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.csv', logCsv());
+    logNoteMsg('Downloaded ' + LOG.entries.length + (LOG.entries.length === 1 ? ' entry' : ' entries') + ' as a CSV — it opens in Excel or Google Sheets, and “Import” here reads it back on another phone.');
+  });
+  $('logCopy').addEventListener('click', function () {
+    var txt = logText();
+    var done = function () { logNoteMsg('Copied ' + LOG.entries.length + (LOG.entries.length === 1 ? ' entry' : ' entries') + ' as text.'); };
+    var fallback = function () {
+      var ta = document.createElement('textarea'); ta.value = txt; ta.readOnly = true;
+      ta.setAttribute('style', 'display:block;width:100%;height:120px;margin-top:6px;font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--line-strong);background:var(--surface-2);color:inherit');
+      logNoteMsg('Copy the text below:'); $('logNote').appendChild(ta); ta.focus(); ta.select();
+    };
+    if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '')) { navigator.share({ title: FARM_NAME + ' sensor log', text: txt }).then(done, function () { if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, fallback); } else { fallback(); } }); }
+    else if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done, fallback); }
+    else { fallback(); }
+  });
+  $('logImport').addEventListener('click', function () { $('logFile').value = ''; $('logFile').click(); });
+  $('logFile').addEventListener('change', function () {
+    var f = $('logFile').files && $('logFile').files[0];
+    if (!f) { return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var r = importCsv(rd.result);
+      if (r.bad) { logNoteMsg('That file does not look like a sensor log CSV from this page (it needs the “from” and “zone_id” columns).'); return; }
+      afterLogChange();
+      logNoteMsg('Imported: ' + r.added + ' new, ' + r.updated + ' updated, ' + r.skipped + ' already here or unreadable.');
+    };
+    rd.onerror = function () { logNoteMsg('Could not read that file.'); };
+    rd.readAsText(f);
   });
 
   // ---------- sample snapshot (what the page shows before sign-in) ----------
