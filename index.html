@@ -62,8 +62,14 @@
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Pham's Chickens Monitor</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%94%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Pham Farm">
+<meta name="application-name" content="Pham Farm">
+<title>Pham Chicken</title>
+<!-- Home-screen icon: iPhone reads apple-touch-icon (a real PNG — it ignores SVG and data URLs and would fall back to a page screenshot); Android reads the manifest -->
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -815,6 +821,7 @@
   var CAT_ORDER = ['water', 'feed', 'fill', 'power', 'controller', 'other'];
   var SEV_RANK = { crit: 3, warn: 2, good: 1, unk: 0 };
   var FARM_NAME = "Pham's Chickens LLC";
+  var PAGE_TITLE = 'Pham Chicken';          // browser tab / bookmark name; the home-screen app is named separately in <head> (apple-mobile-web-app-title) and the manifest
   var FARM_ADDRESS = '1875 Goshen Road, Carthage, MS 39051, United States';
 
   // ---------- state ----------
@@ -1931,7 +1938,7 @@
       notices.push('<div class="notice info"><span class="ico">✓</span><div class="body"><strong>' + esc(linkNotice) + '</strong> This ' + (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? 'phone' : 'computer') + ' now shows the same flock age and targets as the one that sent it.</div></div>');
     }
     $('notices').innerHTML = notices.join('');
-    document.title = (anyOffline ? '🔴 OFFLINE — ' : nCrit ? '🔴 ' + nCrit + ' alarm — ' : nWarn ? '🟠 ' + nWarn + ' pending — ' : '') + FARM_NAME;
+    document.title = (anyOffline ? '🔴 OFFLINE — ' : nCrit ? '🔴 ' + nCrit + ' alarm — ' : nWarn ? '🟠 ' + nWarn + ' pending — ' : '') + PAGE_TITLE;
     $('notices').style.display = notices.length ? 'grid' : 'none';
     $('notices').style.gap = '10px';
 

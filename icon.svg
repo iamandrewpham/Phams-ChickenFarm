@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#1c2537"/>
+      <stop offset="1" stop-color="#0e131d"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- hen, facing right, built from simple shapes so it stays readable at 60 px -->
+  <g fill="#f2c14e">
+    <!-- tail: three plump feathers -->
+    <path d="M330 545 C 250 470, 200 380, 235 300 C 290 360, 330 430, 370 500 Z"/>
+    <path d="M360 520 C 330 430, 335 340, 400 275 C 420 355, 420 440, 410 520 Z"/>
+    <path d="M300 575 C 210 540, 160 470, 165 395 C 240 430, 300 490, 345 560 Z"/>
+    <!-- body -->
+    <path d="M300 560 C 300 470, 400 420, 520 420 C 640 420, 720 470, 740 560 C 760 650, 720 760, 600 790 C 480 820, 320 780, 300 660 Z"/>
+    <!-- neck + head, rooted well inside the body so the join is smooth -->
+    <path d="M560 600 C 580 500, 620 380, 700 315 C 770 260, 860 285, 885 370 C 900 425, 875 480, 830 508 C 780 540, 720 535, 680 525 C 640 560, 600 600, 560 600 Z"/>
+    <!-- comb -->
+    <circle cx="700" cy="300" r="46"/>
+    <circle cx="757" cy="268" r="52"/>
+    <circle cx="816" cy="290" r="44"/>
+    <!-- wattle -->
+    <circle cx="838" cy="520" r="38"/>
+    <!-- legs and feet -->
+    <path d="M470 780 L470 890 M560 785 L560 890" stroke="#f2c14e" stroke-width="30" stroke-linecap="round" fill="none"/>
+    <path d="M415 892 L525 892 M505 892 L615 892" stroke="#f2c14e" stroke-width="28" stroke-linecap="round" fill="none"/>
+  </g>
+  <!-- beak -->
+  <path d="M882 350 L 970 388 L 882 428 Z" fill="#e0a73a"/>
+  <!-- eye -->
+  <circle cx="812" cy="372" r="22" fill="#121826"/>
+  <!-- wing line -->
+  <path d="M400 570 C 480 550, 580 570, 640 650" stroke="#121826" stroke-width="26" stroke-linecap="round" fill="none" opacity="0.55"/>
+  <!-- status badge on the hen's flank: the "monitor" part -->
+  <circle cx="750" cy="745" r="92" fill="#45d483" stroke="#121826" stroke-width="30"/>
+</svg>
