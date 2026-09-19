@@ -113,6 +113,9 @@
     --strip-run: #ffa042;
     --strip-quiet: #1f6f47;
     --strip-unk: #3a4456;
+    --outside: #9fb0c8;
+    --offline: #b48cff;
+    --offline-bg: #2d2445;
     --backdrop: rgba(4, 7, 12, 0.64);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
     --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
@@ -158,6 +161,9 @@
     --strip-run: #f08a1a;
     --strip-quiet: #a6dbbb;
     --strip-unk: #d0d8e4;
+    --outside: #55657f;
+    --offline: #6a3fc4;
+    --offline-bg: #e9dffb;
     --backdrop: rgba(15, 23, 35, 0.45);
     --shadow: 0 1px 2px rgba(15, 23, 35, 0.08), 0 6px 18px rgba(15, 23, 35, 0.09);
   }
@@ -249,7 +255,9 @@
 
   /* ---------- summary strip ---------- */
   .strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  @media (min-width: 720px) { .strip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .strip .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  @media (min-width: 720px) { .strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } .strip .stat:last-child:nth-child(odd) { grid-column: auto; } }
+  .stat .v small.wx { display: block; flex-basis: 100%; margin-top: 2px; }
   .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
   .stat .k { font-size: 12px; color: var(--ink-2); font-weight: 500; }
   .stat .v { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.1; margin-top: 2px; display: flex; align-items: baseline; gap: 6px; }
@@ -526,21 +534,26 @@
   .loglist li.issue { border-left-color: var(--warn); }
   .loglist li.maint { border-left-color: var(--accent); }
   .loglist li.note { border-left-color: var(--series); }
+  .loglist li.offline { border-left-color: var(--offline); }
   .loglist .lk { font-weight: 600; white-space: nowrap; }
   .loglist li.down .lk { color: var(--crit); }
   .loglist li.issue .lk { color: var(--warn); }
   .loglist li.maint .lk { color: var(--accent-text); }
   .loglist li.note .lk { color: var(--series); }
+  .loglist li.offline .lk { color: var(--offline); }
   .loglist .lw { color: var(--ink-2); font-size: 12.5px; overflow-wrap: anywhere; }
   .loglist .lz { grid-column: 1 / -1; color: var(--ink-2); font-size: 12.5px; font-weight: 500; }
   .loglist .lt { grid-column: 1 / -1; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
   .loglist .lb { grid-column: 1 / -1; color: var(--ink-3); font-size: 11.5px; }
+  .loglist li.shared { cursor: default; }
+  .loglist li.shared:hover { outline: none; }
   .loglist li.empty { display: block; background: none; border: 0; padding: 4px 0; cursor: default; color: var(--ink-3); font-size: 13.5px; }
   .loglist li.empty:hover { outline: none; }
   .pill.log { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
   .pill.log.down { background: var(--crit-bg); color: var(--crit); }
   .pill.log.issue { background: var(--warn-bg); color: var(--warn); }
   .pill.log.note { background: var(--surface-2); color: var(--ink-2); }
+  .pill.log.offline { background: var(--offline-bg); color: var(--offline); }
   .inputs li .lp, .kv div .lp, .alist li .lp { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
   .inputs li .lp .pill, .kv div .lp .pill, .alist li .lp .pill { font-size: 10.5px; padding: 1px 6px; letter-spacing: 0; text-transform: none; }
   .alist li .lp { margin-top: 0; }
@@ -554,6 +567,7 @@
   .kind button[data-k="issue"][aria-pressed="true"] { background: var(--warn); color: var(--on-warn); }
   .kind button[data-k="maint"][aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
   .kind button[data-k="note"][aria-pressed="true"] { background: var(--series); color: #fff; }
+  .kind button[data-k="offline"][aria-pressed="true"] { background: var(--offline); color: #fff; }
   .field input[type="datetime-local"], .field textarea, .field select {
     width: 100%; min-width: 0; padding: 9px 10px; border-radius: 8px;
     border: 1px solid var(--line-strong); background: var(--surface);
@@ -737,6 +751,7 @@
         <button type="button" data-k="down" aria-pressed="false">✕ Down</button>
         <button type="button" data-k="issue" aria-pressed="false">! Issue</button>
         <button type="button" data-k="maint" aria-pressed="false">🔧 Maintenance</button>
+        <button type="button" data-k="offline" aria-pressed="false">📡 Offline</button>
         <button type="button" data-k="note" aria-pressed="false">✎ Note</button>
       </div>
     </div>
@@ -1065,6 +1080,8 @@
       z.catLabel = cat ? CATS.filter(function (c) { return c.key === cat; })[0].label : n.replace(/house\s*#?\s*\d+/i, '').trim() || 'Input';
     } else if (/^(power|battery|lithium)/i.test(n) || /battery|power/i.test(z.type || '')) {
       z.cat = 'unit';
+    } else if (/outdoor|outside|ambient|exterior/i.test(n) && num(z.value) != null) {
+      z.cat = 'outdoor';   // an outside-air probe on the unit: used instead of the weather service when present
     } else {
       z.cat = 'loose';
     }
@@ -1596,6 +1613,11 @@
       var bad = t.lowBad || t.highBad;
       bits.push('<span class="pill' + (bad ? ' off' : '') + '" title="Alarm limits set on Sensaphone.net' + (bad ? ' — one of them is out of line with the other houses, see Setup checks' : '') + '">' + (bad ? '! ' : '') + 'limits ' + esc(fmtTemp(t.low)) + '–' + esc(fmtTemp(t.high)) + '°</span>');
     }
+    var o = outsideNow(), tv = t ? num(t.value) : null;
+    if (t && tv != null && o) {
+      var dO = tv - o.temp;
+      bits.push('<span class="pill" title="House reading minus the outside air (' + esc(fmtTemp(o.temp)) + '° ' + esc(o.srcLabel) + ')">' + (Math.abs(dO) < 0.5 ? 'same as outside' : (dO > 0 ? '+' : '−') + Math.abs(dO).toFixed(1) + '° vs outside') + '</span>');
+    }
     if (t) { bits.push(logPills(t)); }
     var html = bits.join('');
     return html ? '<div class="flock">' + html + '</div>' : '';
@@ -1845,7 +1867,11 @@
     };
     var online = dev.is_online === true || /online/i.test(dev.connection_status || '');
     var offline = dev.is_online === false || /offline/i.test(dev.connection_status || '');
-    pushKV('Connection', dev.connection_status || (online ? 'online' : (offline ? 'offline' : '')), online ? 'good' : (offline ? 'crit' : 'unk'));
+    pushKV('Connection', dev.connection_status || (online ? 'online' : (offline ? 'offline' : '')), online ? 'good' : (offline ? 'crit' : 'unk'), connZid(dev));
+    var off7 = offlineSummary('unit:' + dev.device_id, 7 * 86400000);
+    pushKV('Offline · last 7 d', off7.n ? off7.n + (off7.n === 1 ? ' time · ' : ' times · ') + fmtAge(off7.ms) : 'none seen', off7.n ? 'warn' : 'good', connZid(dev));
+    var ws = watcherState();
+    items.push('<div title="' + esc(ws.title) + '"><div class="k">Farm watcher</div><div class="v ' + ws.sev + '">' + (ws.sev !== 'unk' ? '<span class="i">' + sevIcon(ws.sev) + '</span>' : '') + esc(ws.text) + '</div></div>');
     var seen = {};
     model.unit.forEach(function (z) {
       var v = stateText(z.value);
@@ -1889,7 +1915,18 @@
     devices.forEach(function (dev) {
       var model = buildHouses(dev);
       dev.zones.forEach(function (z) { zoneIndex[String(z.zone_id)] = { z: z, dev: dev }; });
-      if (!showingSample) { recordReadings(dev); }
+      zoneIndex[connZid(dev)] = { z: connZone(dev), dev: dev };   // the unit's connection, tappable like an input
+      if (!showingSample) {
+        recordReadings(dev);
+        autoLog('unit:' + dev.device_id, connZid(dev), dev.name + ' monitor unit · connection', null, 'conn', devOffline(dev),
+          'Monitor unit offline — Sensaphone.net lost contact with the unit. Logged by this page while it was open.');
+        model.houses.forEach(function (h) {   // a house whose inputs stop answering has lost its WEB600 or the network link to it
+          var zs = h.temps.concat(h.inputs), z0 = zs[0];
+          var dead = zs.some(function (z) { return /not responding|route down|dependency/i.test((z.status || '') + ' ' + (z.condition || '')); });
+          if (z0) { autoLog('house:' + h.n, z0.zone_id, 'House ' + h.n + ' · inputs', h.n, z0.cat, dead, 'House ' + h.n + ' inputs not responding — the WEB600 or its network link is down. Logged by this page while it was open.'); }
+        });
+        autoLogSeen();
+      }
       if (!farm) { farm = dev; }
       if (devices.length > 1) {
         houseParts.push('<div class="eyebrow" style="grid-column:1/-1;margin-top:4px">' + esc(dev.name) + '</div>');
@@ -1956,6 +1993,7 @@
       '<div class="stat ' + (okH === allHouses.length && allHouses.length ? 'good' : '') + '"><div class="k">Houses OK</div><div class="v num">' + okH + '<small>of ' + allHouses.length + '</small></div></div>' +
       '<div class="stat ' + (nCrit ? 'crit' : (nWarn ? 'warn' : '')) + '"><div class="k">Need attention</div><div class="v num">' + (nCrit + nWarn) + '<small>' + (nCrit ? nCrit + ' alarm' : '') + (nCrit && nWarn ? ' · ' : '') + (nWarn ? nWarn + ' pending' : '') + '</small></div></div>' +
       '<div class="stat"><div class="k">Average house temp</div><div class="v num">' + (avg != null ? esc(fmtTemp(avg)) + '<small>°F · ' + esc(fmtTemp(lo)) + '–' + esc(fmtTemp(hi)) + '</small>' : '—') + '</div></div>' +
+      renderOutsideTile(avg) +
       '<div class="stat ' + (pwTxt ? unitSev(pwTxt) : '') + '"><div class="k">Unit power · battery</div><div class="v num">' + esc(pwTxt || '—') + '<small>' + esc(battTxt ? 'battery ' + battTxt : '') + '</small></div></div>' +
       '</div>';
 
@@ -2101,18 +2139,22 @@
   // ---------- readings this page has seen (fallback when Sensaphone has no log) ----------
   var RD_KEY = 'apco.readings.v1';
   var readings = (function () { try { return JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+  function pushReading(zid, v, now) {   // -> true when a record was added
+    v = v == null ? '' : String(v);
+    if (v === '') { return false; }
+    var cutoff = now - 30 * 86400000;
+    var arr = readings[zid] || (readings[zid] = []);
+    var last = arr[arr.length - 1];
+    if (last && last[1] === v && now - last[0] < 10 * 60000) { return false; }   // unchanged and recent: skip
+    arr.push([now, v]);
+    while (arr.length && arr[0][0] < cutoff) { arr.shift(); }
+    if (arr.length > 900) { arr.splice(0, arr.length - 900); }
+    return true;
+  }
   function recordReadings(dev) {
-    var now = Date.now(), cutoff = now - 30 * 86400000, changed = false;
-    dev.zones.forEach(function (z) {
-      var v = z.value == null ? '' : String(z.value);
-      if (v === '') { return; }
-      var arr = readings[z.zone_id] || (readings[z.zone_id] = []);
-      var last = arr[arr.length - 1];
-      if (last && last[1] === v && now - last[0] < 10 * 60000) { return; }   // unchanged and recent: skip
-      arr.push([now, v]); changed = true;
-      while (arr.length && arr[0][0] < cutoff) { arr.shift(); }
-      if (arr.length > 900) { arr.splice(0, arr.length - 900); }
-    });
+    var now = Date.now(), changed = false;
+    dev.zones.forEach(function (z) { if (pushReading(z.zone_id, z.value, now)) { changed = true; } });
+    if (pushReading(connZid(dev), devOffline(dev) ? 'Offline' : 'Online', now)) { changed = true; }
     if (changed) { try { localStorage.setItem(RD_KEY, JSON.stringify(readings)); } catch (e) {} }
   }
 
@@ -2251,13 +2293,18 @@
     return e;
   }
 
-  function drawLine(container, recs, z, hours) {
+  function drawLine(container, recs, z, hours, outside) {
     container.innerHTML = '';
     var W = Math.max(320, container.clientWidth || 600), H = 250;
     var ml = 44, mr = 14, mt = 14, mb = 28;
     var t1 = Date.now(), t0 = t1 - hours * 3600000;
     var vals = recs.map(function (r) { return num(r.v); }).filter(function (v) { return v != null; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    outside = (outside || []).filter(function (p) { return p.t >= t0 && p.t <= t1 && p.v != null; });
+    if (outside.length) {   // let the outside line in unless it would squash the house line into a ribbon
+      var oLo = Math.min.apply(null, outside.map(function (p) { return p.v; })), oHi = Math.max.apply(null, outside.map(function (p) { return p.v; }));
+      if (Math.max(hi, oHi) - Math.min(lo, oLo) <= 35) { lo = Math.min(lo, oLo); hi = Math.max(hi, oHi); }
+    }
     var span = Math.max(hi - lo, 4);
     var tg = (z.cat === 'temp' && z.house != null) ? targetSeries(z.house, t1 - hours * 3600000, t1, 96) : [];
     var fs = z.cat === 'temp' ? fixedScale() : null;
@@ -2307,6 +2354,13 @@
       svg.appendChild(svgEl('path', { d: tgIn.map(function (p, i) { return (i ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + Y(p.v).toFixed(1); }).join(''), fill: 'none', stroke: 'var(--target)', 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: 0.9 }));
       container.setAttribute('data-target', '1');
     } else { container.removeAttribute('data-target'); }
+    // outside air, dashed, behind the house line
+    if (outside.length > 1) {
+      var od = '';
+      outside.forEach(function (p, i) { var yy = Math.max(mt, Math.min(H - mb, Y(p.v))); od += (i ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + yy.toFixed(1); });
+      svg.appendChild(svgEl('path', { d: od, fill: 'none', stroke: 'var(--outside)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round', opacity: 0.95 }));
+      container.setAttribute('data-outside', '1');
+    } else { container.removeAttribute('data-outside'); }
     // area + line
     var pts = recs.filter(function (r) { return num(r.v) != null; });
     var d = '', area = '';
@@ -2341,7 +2395,8 @@
       vline.setAttribute('x1', x); vline.setAttribute('x2', x); dot.setAttribute('cx', x); dot.setAttribute('cy', y);
       hover.style.display = '';
       tip.style.display = '';
-      tip.innerHTML = '<b>' + esc(fmtTemp(best.v)) + ' ' + esc(unit) + '</b><br>' + esc(fmtWhen(best.t, hours));
+      var ov = outsideAt(outside, best.t);
+      tip.innerHTML = '<b>' + esc(fmtTemp(best.v)) + ' ' + esc(unit) + '</b>' + (ov != null ? ' <span style="color:var(--ink-2)">· outside ' + esc(fmtTemp(ov)) + '</span>' : '') + '<br>' + esc(fmtWhen(best.t, hours));
       var cx = x * (rect.width / W), cy = y * (rect.height / H);
       tip.style.left = Math.max(70, Math.min(rect.width - 70, cx)) + 'px';
       tip.style.top = Math.max(44, cy - 12) + 'px';
@@ -2373,14 +2428,16 @@
         segs.push({ t0: sg.a, t1: sg.b, color: sg.c, v: sg.c === STRIP_COL.ok ? d.okLegend : sg.c === STRIP_COL.quiet ? 'No alarm logged' : sg.c === STRIP_COL.run ? d.onLegend : (d.act ? 'Over ' + fmtRecog(RECOG[z.cat]) : d.onLegend) });
       });
     } else {
-      var seq = recs.slice();
-      if (seq.length && seq[0].t > t0) { seq.unshift({ t: t0, v: seq[0].v, alarm: seq[0].alarm, ghost: true }); }
+      var seq = recs.slice(), watched = z.cat === 'conn';
+      if (seq.length && seq[0].t > t0 && !watched) { seq.unshift({ t: t0, v: seq[0].v, alarm: seq[0].alarm, ghost: true }); }
       for (var i = 0; i < seq.length; i++) {
         var a = seq[i], b = seq[i + 1], end = b ? b.t : t1;
+        if (watched && !a.live && (b ? b.t - a.t : t1 - a.t) > GAP_MAX + 3 * 60000) { end = a.t + GAP_MAX; }   // this page only vouches for a check for a few minutes
         var al = z.isOutput ? /^(on|1|true)\b/i.test(String(a.v == null ? '' : a.v)) : isAlarmValue(a);
         var st0 = Math.max(a.t, t0), st1 = Math.min(end, t1);
+        if (st1 <= st0) { continue; }
         var prev = segs[segs.length - 1];
-        if (prev && prev.alarm === al) { prev.t1 = st1; }               // extend the current run
+        if (prev && prev.alarm === al && prev.t1 >= st0) { prev.t1 = st1; }               // extend the current run
         else { segs.push({ t0: st0, t1: st1, alarm: al, v: a.v }); if (al && !a.ghost) { count++; } }
         if (al) { alarmMs += st1 - st0; }
       }
@@ -2396,6 +2453,7 @@
     });
     svg.appendChild(svgEl('text', { x: ml, y: 16, 'font-size': 11.5, fill: 'var(--ink-2)' }, dg
       ? 'Green = ' + d.okLegend.toLowerCase() + (d.act ? ' · Amber = ' + d.onLegend.toLowerCase() + ' · Red = over ' + fmtRecog(RECOG[z.cat]) : ' · Red = ' + d.onLegend.toLowerCase()) + (quiet ? ' · ' + quietWord() + ' = no alarm logged' : ' · gray = no record')
+      : z.cat === 'conn' ? 'Green = online · Red = offline · gray = page not open'
       : 'Green = OK · Red = alarm/open · gray = no record'));
     var tip = document.createElement('div'); tip.className = 'tip'; tip.style.display = 'none';
     container.appendChild(svg); container.appendChild(tip);
@@ -2454,6 +2512,13 @@
     var chart = $('shChart');
     chart.innerHTML = '<div class="msg">Loading history…</div>';
     $('shStats').innerHTML = ''; $('shLegend').innerHTML = ''; $('shNote').textContent = '';
+    if (z.cat === 'conn') {
+      var seen = localHistory(z, hours);
+      if (!showingSample) { seen.push({ t: Date.now(), v: z.value, live: true }); }
+      var offs = logsFor(z.zone_id).filter(function (e) { return e.kind === 'offline'; }).length;
+      renderSheetData(seen, z, hours, 'What this page saw while it was open: ' + seen.length + (seen.length === 1 ? ' check' : ' checks') + '. Offline stretches are also written to the Sensor log by themselves (' + offs + ' so far) — those show in the lane under the bar and can be exported with the rest of the log. Gray = nobody had the page open.');
+      return;
+    }
     if (isDig(z) && z.house != null) {
       getHistory(dev, z, hours).then(function (recs) { return { ok: true, recs: recs }; }, function () { return { ok: false, recs: [] }; }).then(function (h) {
         var remote = h.recs;
@@ -2470,26 +2535,30 @@
       });
       return;
     }
-    getHistory(dev, z, hours).then(function (recs) {
+    var wantOutside = z.cat === 'temp' && z.house != null;
+    var outsideP = wantOutside ? outsideSeries(hours) : Promise.resolve([]);
+    Promise.all([getHistory(dev, z, hours), outsideP]).then(function (both) {
+      var recs = both[0], outside = both[1];
       if (!recs.length) { throw new ApiError('empty', 'Sensaphone.net returned no logged readings for this range.'); }
-      var note = 'Sensaphone.net data log · ' + recs.length + ' readings';
+      var note = 'Sensaphone.net data log · ' + recs.length + ' readings' + (outside.length ? ' · outside air: ' + outsideSrcLabel() : '');
       if (!showingSample && num(z.value) != null) { recs = recs.concat([{ t: Date.now(), v: z.value, live: true }]); }   // so "Now" and the end of the line are the live reading, not the last logged one
-      renderSheetData(recs, z, hours, note);
+      renderSheetData(recs, z, hours, note, false, outside);
     }).catch(function (e) {
       var local = localHistory(z, hours);
       if (local.length > 1) {
-        renderSheetData(local, z, hours, 'Readings this page collected while open (' + local.length + ') — ' + (e && e.message ? e.message : ''));
+        outsideP.then(function (outside) { renderSheetData(local, z, hours, 'Readings this page collected while open (' + local.length + ') — ' + (e && e.message ? e.message : ''), false, outside); }, function () { renderSheetData(local, z, hours, 'Readings this page collected while open (' + local.length + ')'); });
       } else {
         chart.innerHTML = '<div class="msg ' + (e && e.kind === 'nolog' ? '' : 'crit') + '">' + esc(e && e.message ? e.message : String(e)) + '</div>';
         $('shNote').textContent = 'This page also keeps its own record of readings while it is open; give it a little time and a graph will build up here even without Sensaphone logging.';
       }
     });
   }
-  function renderSheetData(recs, z, hours, note, logged) {
+  function renderSheetData(recs, z, hours, note, logged, outside) {
     var chart = $('shChart');
-    var numeric = recs.filter(function (r) { return num(r.v) != null; }).length >= Math.max(2, recs.length * 0.6) && z.cat !== 'power' && z.cat !== 'water' && z.cat !== 'controller' && z.cat !== 'feed' && z.cat !== 'fill';
+    var numeric = recs.filter(function (r) { return num(r.v) != null; }).length >= Math.max(2, recs.length * 0.6) && z.cat !== 'power' && z.cat !== 'water' && z.cat !== 'controller' && z.cat !== 'feed' && z.cat !== 'fill' && z.cat !== 'conn';
     if (numeric) {
-      var vals = drawLine(chart, recs, z, hours);
+      var vals = drawLine(chart, recs, z, hours, outside);
+      var oNow = outside && outside.length ? outside[outside.length - 1].v : null;
       var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
       var unit = tempUnit(z);
       var outN = (z.low != null && z.high != null) ? vals.filter(function (v) { return v < z.low || v > z.high; }).length : 0;
@@ -2498,21 +2567,23 @@
         '<div><div class="k">Low</div><div class="v num">' + esc(fmtTemp(mn)) + '</div></div>' +
         '<div><div class="k">High</div><div class="v num">' + esc(fmtTemp(mx)) + '</div></div>' +
         '<div><div class="k">Average</div><div class="v num">' + esc(fmtTemp(avg)) + '</div></div>' +
-        (z.low != null && z.high != null ? '<div><div class="k">Outside limits</div><div class="v num ' + (outN ? 'crit' : 'good') + '">' + outN + '</div></div>' : '');
+        (z.low != null && z.high != null ? '<div><div class="k">Outside limits</div><div class="v num ' + (outN ? 'crit' : 'good') + '">' + outN + '</div></div>' : '') +
+        (oNow != null ? '<div title="' + esc(outsideSrcLabel()) + '"><div class="k">Outside air</div><div class="v num" style="color:var(--outside)">' + esc(fmtTemp(oNow)) + '<small style="font:500 12px var(--font-body);color:var(--ink-2)"> ' + esc(fmtTemp(num(recs[recs.length - 1].v) - oNow).replace(/^(?!-)/, '+')) + '° house</small></div></div>' : '');
       $('shLegend').innerHTML = '<span><i style="background:' + SERIES + '"></i>' + esc(z.name) + '</span>' +
+        (chart.getAttribute('data-outside') ? '<span><i style="background:var(--outside);height:2px;border-top:2px dashed var(--outside);background:none"></i>Outside air · ' + esc(outsideSrcLabel()) + '</span>' : '') +
         (chart.getAttribute('data-target') ? '<span><i style="background:var(--target)"></i>Target for the flock\'s age</span>' : '') +
         (z.low != null && z.high != null ? '<span><i class="band" style="background:var(--good)"></i>Alarm limits ' + esc(fmtTemp(z.low)) + '–' + esc(fmtTemp(z.high)) + ' ' + esc(unit) + '</span><span><i style="background:var(--crit);width:8px;height:8px;border-radius:50%"></i>Outside limits</span>' : '') +
         (chart.getAttribute('data-logs') ? logLegend() : '');
     } else {
       var st = drawStates(chart, recs, z, hours, logged);
       var mins = Math.round(st.alarmMs / 60000);
-      var dg = isDig(z) && z.house != null, d = dg ? DIG[z.cat] : null;
+      var dg = isDig(z) && z.house != null, d = dg ? DIG[z.cat] : null, conn = z.cat === 'conn';
       var seen = (dg && d.act && st.quiet) ? ' seen' : '';   // feed/fill runs shorter than the alarm time are not in Sensaphone's log, so these are the ones on record
       var fmtMin = function (m) { return m >= 120 ? (m / 60).toFixed(1) + ' h' : m + ' min'; };
       $('shStats').innerHTML =
         '<div><div class="k">Now</div><div class="v ' + (z.sev === 'good' && !z.running ? 'good' : z.sev === 'crit' ? 'crit' : '') + '">' + esc(dg ? digState(z).word : (stateText(z.value) || sevWord(z.sev, z))) + '</div></div>' +
-        '<div><div class="k">' + (dg ? d.ev + seen : 'Alarm events') + '</div><div class="v num ' + (dg && d.act ? '' : (st.count ? 'crit' : 'good')) + '">' + st.count + '</div></div>' +
-        '<div><div class="k">' + (dg ? d.dur + seen : 'Time in alarm') + '</div><div class="v num">' + fmtMin(mins) + '</div></div>' +
+        '<div><div class="k">' + (dg ? d.ev + seen : conn ? 'Times offline' : 'Alarm events') + '</div><div class="v num ' + (dg && d.act ? '' : (st.count ? 'crit' : 'good')) + '">' + st.count + '</div></div>' +
+        '<div><div class="k">' + (dg ? d.dur + seen : conn ? 'Time offline' : 'Time in alarm') + '</div><div class="v num">' + fmtMin(mins) + '</div></div>' +
         (dg && d.act ? '<div><div class="k">Longest run</div><div class="v num ' + (st.longest > RECOG[z.cat] * 1000 ? 'crit' : '') + '">' + fmtMin(Math.round(st.longest / 60000)) + '</div></div>' : '');
       $('shLegend').innerHTML = dg
         ? '<span><i style="background:' + STRIP_COL.ok + ';height:10px"></i>' + esc(d.okLegend) + '</span>' +
@@ -2520,6 +2591,7 @@
                  : '<span><i style="background:' + STRIP_COL.on + ';height:10px"></i>' + esc(d.onLegend) + '</span>') +
           (st.quiet ? '<span><i style="background:' + STRIP_COL.quiet + ';height:10px"></i>No alarm logged</span>' : '') +
           '<span><i style="background:' + STRIP_COL.unk + ';height:10px"></i>No record</span>'
+        : conn ? '<span><i style="background:var(--good);height:10px"></i>Online</span><span><i style="background:var(--crit);height:10px"></i>Offline</span><span><i style="background:' + STRIP_COL.unk + ';height:10px"></i>Page not open</span>'
         : '<span><i style="background:var(--good);height:10px"></i>OK</span><span><i style="background:var(--crit);height:10px"></i>Alarm</span>';
       if (st.logs) { $('shLegend').innerHTML += logLegend(); }
     }
@@ -2752,6 +2824,7 @@
     down:  { label: 'Down',        icon: '✕', col: 'var(--crit)',   fill: 'var(--crit)' },
     issue: { label: 'Issue',       icon: '!', col: 'var(--warn)',   fill: 'var(--warn)' },
     maint: { label: 'Maintenance', icon: '🔧', col: 'var(--accent-text)', fill: 'var(--accent)' },
+    offline: { label: 'Offline',   icon: '📡', col: 'var(--offline)', fill: 'var(--offline)' },
     note:  { label: 'Note',        icon: '✎', col: 'var(--series)', fill: 'var(--series)' }
   };
   var LOG_SHOW = 6;      // page-level list shows this many before "Show all"
@@ -2767,6 +2840,7 @@
       label: String(e.label || ''), zname: String(e.zname || ''), house: num(e.house), cat: String(e.cat || ''),
       kind: LOG_KIND[e.kind] ? e.kind : 'note', from: from, to: to, open: open,
       text: String(e.text == null ? '' : e.text).slice(0, 2000), by: String(e.by == null ? '' : e.by).slice(0, 80),
+      auto: e.auto ? String(e.auto) : '',   // set on entries this page wrote by itself (offline stretches): which subject they track
       created: num(e.created) || from, updated: num(e.updated) || num(e.created) || Date.now()
     };
     if (!out.label) { out.label = out.house != null ? 'House ' + out.house + (out.zname ? ' · ' + out.zname : '') : (out.zname || 'Zone ' + out.zid); }
@@ -2781,8 +2855,67 @@
   }
   function saveLog() { try { localStorage.setItem(LOG_KEY, JSON.stringify(LOG)); } catch (e) {} }
   var LOG = loadLog();
+  // The farm watcher (.github/workflows/offline-watch.yml) keeps its own offline log on the repo's data branch, so outages are
+  // recorded whether or not anyone has this page open. It is read here every few minutes and shown next to the local entries,
+  // read-only. When this page also saw the same outage, the watcher's entry wins and the page's copy is hidden.
+  var SHARED_LOG_URL = 'https://raw.githubusercontent.com/iamandrewpham/Phams-ChickenFarm/refs/heads/data/offline-log.json';
+  var SHARED_STATUS_URL = 'https://raw.githubusercontent.com/iamandrewpham/Phams-ChickenFarm/refs/heads/data/status.json';
+  var SHARED_KEY = 'apco.shared.v1';
+  var SHARED_EVERY = 5 * 60000;
+  var shared = (function () { try { var v = JSON.parse(localStorage.getItem(SHARED_KEY) || 'null'); if (v && Array.isArray(v.entries)) { v.entries = v.entries.map(cleanEntry).filter(Boolean); v.err = ''; return v; } } catch (e) {} return { at: 0, entries: [], status: null, err: '', missing: false }; })();
+  var sharedBusy = false;
+  function fetchShared(force) {   // -> Promise<boolean> true when something new arrived
+    if (sharedBusy || (!force && Date.now() - shared.at < SHARED_EVERY)) { return Promise.resolve(false); }
+    sharedBusy = true;
+    var get = function (url) { return fetch(url, { mode: 'cors', cache: 'no-cache' }).then(function (r) { if (r.status === 404) { return { missing: true }; } if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.json(); }); };
+    return Promise.all([get(SHARED_LOG_URL), get(SHARED_STATUS_URL).catch(function () { return null; })]).then(function (both) {
+      var log = both[0], st = both[1];
+      var before = JSON.stringify(shared.entries.map(function (e) { return e.id + e.updated + e.open; })) + JSON.stringify(shared.status && shared.status.checked_at);
+      if (log && log.missing) { shared = { at: Date.now(), entries: [], status: null, err: '', missing: true }; }
+      else {
+        var entries = (log && Array.isArray(log.entries) ? log.entries : []).map(cleanEntry).filter(Boolean);
+        entries.forEach(function (e) { e.shared = true; if (!e.by) { e.by = 'watcher'; } });
+        shared = { at: Date.now(), entries: entries, status: st && !st.missing ? st : null, err: '', missing: false };
+      }
+      try { localStorage.setItem(SHARED_KEY, JSON.stringify(shared)); } catch (e) {}
+      sharedBusy = false;
+      return before !== JSON.stringify(shared.entries.map(function (e) { return e.id + e.updated + e.open; })) + JSON.stringify(shared.status && shared.status.checked_at);
+    }).catch(function (e) {
+      shared.err = 'The shared log could not be read just now (' + (e && e.message ? e.message : e) + ')';
+      shared.at = Date.now() - SHARED_EVERY + 60000;   // try again in a minute
+      sharedBusy = false;
+      return false;
+    });
+  }
+  function sharedTick() { fetchShared(false).then(function (fresh) { if (fresh && lastDevices) { render(lastDevices); if (sheet.z && !$('sheetBg').hidden) { renderSheetLog(); loadSheet(); } } }); }
+  setInterval(function () { if (!document.hidden) { sharedTick(); } }, 60000);
+  function logEndOf(e, now) { return e.open ? now : (e.to != null ? e.to : e.from); }
+  function allEntries() {   // local entries + the watcher's, minus local automatic copies of an outage the watcher also has
+    var now = Date.now(), out = shared.entries.slice();
+    LOG.entries.forEach(function (e) {
+      if (e.auto) {
+        var dup = shared.entries.some(function (w) { return w.auto === e.auto && e.from <= logEndOf(w, now) + 15 * 60000 && logEndOf(e, now) >= w.from - 15 * 60000; });
+        if (dup) { return; }
+      }
+      out.push(e);
+    });
+    return out;
+  }
+  function watcherState() {   // -> {text, sev, title} for the "Farm watcher" tile
+    var st = shared.status, now = Date.now();
+    if (st && num(st.checked_at)) {
+      var age = now - num(st.checked_at), every = num(st.interval_min) || 10;
+      var ago = age < 60000 ? 'just now' : fmtAge(age) + ' ago';
+      if (age < every * 2.5 * 60000) { return { text: 'checked ' + ago, sev: 'good', title: 'The GitHub Action checks the unit every ' + every + ' min and writes offline stretches to the shared log' }; }
+      if (age < 2 * 3600000) { return { text: 'last check ' + ago + ' · running late', sev: 'warn', title: 'GitHub\'s schedule is best-effort and runs late when it is busy. Anything that goes offline meanwhile is caught on the next run.' }; }
+      return { text: 'last check ' + ago + ' · stopped?', sev: 'crit', title: 'No run for a long time. Open the repo\'s Actions tab → Offline watcher; GitHub pauses schedules after 60 days without activity, or the secrets may have changed.' };
+    }
+    if (shared.missing) { return { text: 'not set up yet', sev: 'unk', title: 'Run the "Offline watcher" workflow once from the repo\'s Actions tab; it creates the data branch this page reads.' }; }
+    if (shared.err) { return { text: 'shared log unreachable', sev: 'unk', title: shared.err }; }
+    return { text: 'looking…', sev: 'unk', title: 'Reading the shared log' };
+  }
   function byFromDesc(a, b) { return b.from - a.from || b.created - a.created; }
-  function logsFor(zid) { zid = String(zid); return LOG.entries.filter(function (e) { return e.zid === zid; }).sort(byFromDesc); }
+  function logsFor(zid) { zid = String(zid); return allEntries().filter(function (e) { return e.zid === zid; }).sort(byFromDesc); }
   function logEnd(e, now) { return e.open ? (now || Date.now()) : (e.to != null ? e.to : e.from); }
   function logActiveAt(e, t) { return e.from <= t && (e.open || (e.to != null && e.to >= t)); }
   function activeLogs(zid) { var now = Date.now(); return logsFor(zid).filter(function (e) { return logActiveAt(e, now); }); }
@@ -2793,16 +2926,16 @@
     return fmtDay(t) + (d.getFullYear() !== n.getFullYear() ? '/' + d.getFullYear() : '') + ' ' + fmtClock(t);
   }
   function fmtSpan(e) {   // "Tue 9/16 2:35 PM → 4:10 PM · 1h 35m", "since Tue 9/16 2:35 PM · ongoing 3h 12m", or just the moment
-    if (e.open) { return 'since ' + fmtStamp(e.from) + ' · ongoing ' + fmtAge(Date.now() - e.from); }
+    if (e.open) { var age = Date.now() - e.from; return 'since ' + fmtStamp(e.from) + (age < 60000 ? ' · just started' : ' · ongoing ' + fmtAge(age)); }
     if (e.to == null) { return fmtStamp(e.from); }
     var sameDay = new Date(e.from).toDateString() === new Date(e.to).toDateString();
-    return fmtStamp(e.from) + ' → ' + (sameDay ? fmtClock(e.to) : fmtStamp(e.to)) + (e.to > e.from ? ' · ' + fmtAge(e.to - e.from) : '');
+    return fmtStamp(e.from) + ' → ' + (sameDay ? fmtClock(e.to) : fmtStamp(e.to)) + (e.to - e.from >= 60000 ? ' · ' + fmtAge(e.to - e.from) : e.to > e.from ? ' · under a minute' : '');
   }
   // pills on the house cards: only entries that cover right now, so the crew sees "Maintenance · 2h" next to an input that is reading odd
   function logPills(z) {
     return activeLogs(z.zone_id).map(function (e) {
       var k = LOG_KIND[e.kind];
-      return '<span class="pill log ' + e.kind + '" data-zid="' + esc(z.zone_id) + '" title="' + esc(k.label + ' · ' + fmtSpan(e) + (e.text ? ' — ' + e.text : '') + (e.by ? ' (' + e.by + ')' : '')) + '">' + k.icon + ' ' + k.label + (e.open ? ' · ' + esc(fmtAge(Date.now() - e.from)) : '') + '</span>';
+      return '<span class="pill log ' + e.kind + '" data-zid="' + esc(z.zone_id) + '" title="' + esc(k.label + ' · ' + fmtSpan(e) + (e.text ? ' — ' + e.text : '') + (e.by ? ' (' + e.by + ')' : '')) + '">' + k.icon + ' ' + k.label + (e.open && Date.now() - e.from >= 60000 ? ' · ' + esc(fmtAge(Date.now() - e.from)) : '') + '</span>';
     }).join('');
   }
   var logKindsDrawn = {};   // kinds the last chart drew, so the legend lists only those
@@ -2818,6 +2951,7 @@
     var list = logsInWindow(z, t0, t1);
     list.sort(function (a, b) { return a.from - b.from; });
     logKindsDrawn = {};
+    var lastLabelEnd = -Infinity;   // lane labels skip when they would sit on top of the previous one
     list.forEach(function (e, i) {
       var k = LOG_KIND[e.kind], a = Math.max(e.from, t0), b = Math.min(logEnd(e, t1), t1);
       logKindsDrawn[e.kind] = true;
@@ -2828,19 +2962,24 @@
         svg.appendChild(svgEl('text', { x: x0 + 4, y: yTop + 11 + (i % 2) * 12, 'font-size': 10.5, 'font-weight': 600, fill: k.col }, k.label));
       } else {
         svg.appendChild(svgEl('rect', { x: x0, y: yTop, width: Math.max(3, x1 - x0), height: yBot - yTop, rx: 2, fill: k.fill, opacity: 0.9 }));
-        svg.appendChild(svgEl('text', { x: x0 + 2, y: yTop - 3, 'font-size': 10, 'font-weight': 600, fill: k.col }, k.label));
+        var nearRight = x0 + 60 > X(t1);   // keep the label inside the drawing when the stretch sits at the right edge
+        var lw = k.label.length * 6.2, lx0 = nearRight ? Math.max(x1, x0 + 3) - lw : x0 + 2;
+        if (lx0 >= lastLabelEnd + 4) {
+          svg.appendChild(svgEl('text', { x: nearRight ? Math.max(x1, x0 + 3) : x0 + 2, y: yTop - 3, 'font-size': 10, 'font-weight': 600, fill: k.col, 'text-anchor': nearRight ? 'end' : 'start' }, k.label));
+          lastLabelEnd = lx0 + lw;
+        }
       }
     });
     return list.length;
   }
   function logItemHtml(e, withZone) {
     var k = LOG_KIND[e.kind], live = logActiveAt(e, Date.now());
-    return '<li class="' + e.kind + '" data-lid="' + esc(e.id) + '" tabindex="0" role="button" title="Tap to edit or delete">' +
+    return '<li class="' + e.kind + (e.shared ? ' shared' : '') + '"' + (e.shared ? ' title="Recorded by the farm watcher (GitHub Action). It is part of the shared log, so it cannot be edited from here."' : ' data-lid="' + esc(e.id) + '" tabindex="0" role="button" title="Tap to edit or delete"') + '>' +
       '<span class="lk">' + k.icon + ' ' + k.label + (live ? ' · now' : '') + '</span>' +
       '<span class="lw num">' + esc(fmtSpan(e)) + '</span>' +
       (withZone ? '<span class="lz">' + esc(e.label) + '</span>' : '') +
       (e.text ? '<span class="lt">' + esc(e.text) + '</span>' : '') +
-      '<span class="lb">' + esc((e.by ? e.by + ' · ' : '') + 'added ' + fmtStamp(e.created) + (e.updated - e.created > 60000 ? ', edited ' + fmtStamp(e.updated) : '')) + '</span></li>';
+      '<span class="lb">' + esc((e.shared ? 'farm watcher (checks every ' + (shared.status && num(shared.status.interval_min) || 10) + ' min) · ' : e.auto ? 'logged by this page automatically · ' : e.by ? e.by + ' · ' : '') + 'added ' + fmtStamp(e.created) + (!e.auto && !e.shared && e.updated - e.created > 60000 ? ', edited ' + fmtStamp(e.updated) : '')) + '</span></li>';
   }
   function renderSheetLog() {
     var z = sheet.z;
@@ -2852,7 +2991,7 @@
   }
   var logFilterVal = 'all', logShowAll = false;
   function renderLogSection() {
-    var all = LOG.entries.slice().sort(byFromDesc), now = Date.now();
+    var all = allEntries().sort(byFromDesc), now = Date.now();
     // filter choices: everything, what is happening now, then each house and the unit that has entries
     var houses = {}, unit = false;
     all.forEach(function (e) { if (e.house != null) { houses[e.house] = 1; } else { unit = true; } });
@@ -2871,7 +3010,7 @@
     $('logHead').textContent = 'Sensor log' + (all.length ? ' · ' + all.length + (all.length === 1 ? ' entry' : ' entries') + (active ? ' · ' + active + ' happening now' : '') : '');
     var shown = logShowAll ? list : list.slice(0, LOG_SHOW);
     $('logAll').innerHTML = shown.length ? shown.map(function (e) { return logItemHtml(e, true); }).join('')
-      : '<li class="empty">' + (all.length ? 'No entries match that filter.' : 'No entries yet. Tap a reading on a house card and use “Add entry”, or “+ Add entry” here.') + '</li>';
+      : '<li class="empty">' + (all.length ? 'No entries match that filter.' : 'No entries yet. Tap a reading on a house card and use “Add entry”, or “+ Add entry” here. Offline stretches are added by themselves — by this page while it is open, and by the farm watcher around the clock.') + '</li>';
     $('logMore').hidden = list.length <= LOG_SHOW;
     $('logMore').textContent = logShowAll ? 'Show fewer' : 'Show all ' + list.length;
     $('logCsv').disabled = !all.length; $('logCopy').disabled = !all.length;
@@ -2989,20 +3128,20 @@
   });
 
   // --- CSV out and in (the same columns both ways, so a file from one phone loads on another) ---
-  var CSV_HEAD = ['id', 'house', 'input', 'type', 'from', 'to', 'ongoing', 'duration_min', 'notes', 'logged_by', 'zone_id', 'zone_name', 'created', 'updated'];
+  var CSV_HEAD = ['id', 'house', 'input', 'type', 'from', 'to', 'ongoing', 'duration_min', 'notes', 'logged_by', 'zone_id', 'zone_name', 'created', 'updated', 'auto'];
   function csvCell(v) { v = v == null ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function stampCsv(t) { if (t == null) { return ''; } var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function parseStamp(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(s || '').trim()); if (m) { return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime(); } var n = num(s); return n != null && n > 946684800000 ? n : null; }
   function logCsv() {
-    var rows = [CSV_HEAD].concat(LOG.entries.slice().sort(byFromDesc).map(function (e) {
+    var rows = [CSV_HEAD].concat(allEntries().sort(byFromDesc).map(function (e) {
       var end = e.open ? null : e.to;
-      return [e.id, e.house != null ? e.house : '', e.label, LOG_KIND[e.kind].label, stampCsv(e.from), stampCsv(end), e.open ? 'yes' : '', end != null ? Math.round((end - e.from) / 60000) : '', e.text, e.by, e.zid, e.zname, stampCsv(e.created), stampCsv(e.updated)];
+      return [e.id, e.house != null ? e.house : '', e.label, LOG_KIND[e.kind].label, stampCsv(e.from), stampCsv(end), e.open ? 'yes' : '', end != null ? Math.round((end - e.from) / 60000) : '', e.text, e.shared ? 'watcher' : e.auto ? 'auto' : e.by, e.zid, e.zname, stampCsv(e.created), stampCsv(e.updated), e.auto];
     }));
     return rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n';
   }
   function logText() {
-    return LOG.entries.slice().sort(byFromDesc).map(function (e) {
-      return fmtSpan(e) + ' · ' + e.label + ' · ' + LOG_KIND[e.kind].label + (e.text ? ' — ' + e.text : '') + (e.by ? ' (' + e.by + ')' : '');
+    return allEntries().sort(byFromDesc).map(function (e) {
+      return fmtSpan(e) + ' · ' + e.label + ' · ' + LOG_KIND[e.kind].label + (e.text ? ' — ' + e.text : '') + (e.shared ? ' (farm watcher)' : e.auto ? ' (this page)' : e.by ? ' (' + e.by + ')' : '');
     }).join('\n');
   }
   function parseCsv(text) {   // -> rows of cells; handles quoted cells with commas, quotes and line breaks
@@ -3028,6 +3167,7 @@
     var byId = {}; LOG.entries.forEach(function (e) { byId[e.id] = e; });
     var added = 0, updated = 0, skipped = 0;
     rows.slice(1).forEach(function (r) {
+      if (col(r, 'logged_by') === 'watcher') { skipped++; return; }   // the watcher's own entries come from the shared log, not from a file
       var from = parseStamp(col(r, 'from'));
       var zid = col(r, 'zone_id') || ('x:' + col(r, 'input'));
       var hm = /house\s*(\d+)/i.exec(col(r, 'input') || '');
@@ -3035,7 +3175,7 @@
         id: col(r, 'id') || newId(), zid: zid, label: col(r, 'input'), zname: col(r, 'zone_name'),
         house: col(r, 'house') !== '' ? col(r, 'house') : (hm ? hm[1] : null), cat: '',
         kind: kindOf(col(r, 'type')), from: from, to: parseStamp(col(r, 'to')), open: /^(yes|true|1)$/i.test(col(r, 'ongoing')),
-        text: col(r, 'notes'), by: col(r, 'logged_by'), created: parseStamp(col(r, 'created')) || from, updated: parseStamp(col(r, 'updated')) || from
+        text: col(r, 'notes'), by: col(r, 'logged_by') === 'auto' ? '' : col(r, 'logged_by'), auto: col(r, 'auto'), created: parseStamp(col(r, 'created')) || from, updated: parseStamp(col(r, 'updated')) || from
       });
       if (!e) { skipped++; return; }
       var cur = byId[e.id];
@@ -3085,6 +3225,126 @@
     rd.onerror = function () { logNoteMsg('Could not read that file.'); };
     rd.readAsText(f);
   });
+
+  // ---------- outside air: the weather at the farm, or an outdoor probe on the unit if one is ever wired ----------
+  var FARM_GEO = { lat: 32.73, lon: -89.54 };   // Carthage, MS — the same spot the theme script uses for sunrise and sunset
+  var WX_KEY = 'apco.wx.v1';
+  var WX_URL = 'https://api.open-meteo.com/v1/forecast?latitude=' + FARM_GEO.lat + '&longitude=' + FARM_GEO.lon +
+    '&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&hourly=temperature_2m&past_days=31&forecast_days=1' +
+    '&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FChicago&timeformat=unixtime';
+  var WX_EVERY = 15 * 60000;   // Open-Meteo updates hourly; this keeps the page well inside its free allowance
+  var wx = (function () { try { var s = JSON.parse(localStorage.getItem(WX_KEY) || 'null'); if (s && s.cur && Array.isArray(s.hourly)) { s.err = ''; return s; } } catch (e) {} return { at: 0, cur: null, hourly: [], err: '' }; })();
+  var wxBusy = false;
+  function fetchWx(force) {   // -> Promise<boolean> true when fresh weather arrived
+    if (wxBusy || (!force && Date.now() - wx.at < WX_EVERY)) { return Promise.resolve(false); }
+    wxBusy = true;
+    return fetch(WX_URL, { mode: 'cors' }).then(function (r) { return r.json(); }).then(function (j) {
+      var c = j && j.current, h = j && j.hourly;
+      if (!c || num(c.temperature_2m) == null || !h || !Array.isArray(h.time)) { throw new Error('unexpected weather response'); }
+      var now = Date.now(), hourly = [];
+      h.time.forEach(function (t, i) { var v = num(h.temperature_2m[i]), ms = num(t) * 1000; if (v != null && ms <= now + 3600000) { hourly.push({ t: ms, v: v }); } });
+      wx = { at: now, cur: { t: num(c.time) * 1000, temp: num(c.temperature_2m), rh: num(c.relative_humidity_2m), feels: num(c.apparent_temperature), wind: num(c.wind_speed_10m) }, hourly: hourly, err: '' };
+      try { localStorage.setItem(WX_KEY, JSON.stringify(wx)); } catch (e) {}
+      wxBusy = false;
+      return true;
+    }).catch(function () {
+      wx.err = 'Weather could not be fetched just now';
+      wx.at = Date.now() - WX_EVERY + 2 * 60000;   // try again in two minutes, not on every refresh
+      wxBusy = false;
+      return false;
+    });
+  }
+  function wxTick() { fetchWx(false).then(function (fresh) { if (fresh && lastDevices) { render(lastDevices); if (sheet.z && sheet.z.cat === 'temp' && !$('sheetBg').hidden) { loadSheet(); } } }); }
+  setInterval(function () { if (!document.hidden) { wxTick(); } }, 5 * 60000);
+  function outdoorZone() {   // -> {z, dev} for an outside-air probe on the Sensaphone, if there is one
+    var out = null;
+    Object.keys(zoneIndex).forEach(function (k) { var it = zoneIndex[k]; if (!out && it.z.cat === 'outdoor' && num(it.z.value) != null) { out = it; } });
+    return out;
+  }
+  function outsideNow() {   // -> {temp, rh, feels, wind, t, src, srcLabel} or null when nothing is known
+    var oz = outdoorZone();
+    if (oz && !showingSample) { return { temp: num(oz.z.value), rh: null, feels: null, wind: null, t: Date.now(), src: 'sensor', srcLabel: 'from "' + oz.z.name.trim() + '" on the unit' }; }
+    if (wx.cur && Date.now() - wx.cur.t < 3 * 3600000) { return { temp: wx.cur.temp, rh: wx.cur.rh, feels: wx.cur.feels, wind: wx.cur.wind, t: wx.cur.t, src: 'weather', srcLabel: 'weather for Carthage, MS (Open-Meteo)' }; }
+    return null;
+  }
+  function outsideSrcLabel() { var o = outsideNow(); return o ? o.srcLabel : 'weather for Carthage, MS (Open-Meteo)'; }
+  function wxSeries(t0) {
+    var now = Date.now(), out = wx.hourly.filter(function (p) { return p.t >= t0 - 3600000 && p.t <= now; });
+    if (wx.cur && wx.cur.t >= t0 && (!out.length || wx.cur.t > out[out.length - 1].t)) { out.push({ t: Math.min(wx.cur.t, now), v: wx.cur.temp }); }
+    return out;
+  }
+  function outsideSeries(hours) {   // -> Promise<[{t, v}]>: the probe's Sensaphone log when there is a probe, otherwise the hourly weather
+    var t0 = Date.now() - hours * 3600000, oz = outdoorZone();
+    var weather = function () { return fetchWx(false).then(function () { return wxSeries(t0); }); };
+    if (oz && !showingSample) {
+      return getHistory(oz.dev, oz.z, hours).then(function (recs) {
+        var out = recs.map(function (r) { return { t: r.t, v: num(r.v) }; }).filter(function (p) { return p.v != null; });
+        return out.length > 1 ? out : weather();
+      }, weather);
+    }
+    return weather();
+  }
+  function outsideAt(series, t) {   // the outside reading nearest to t, if one is within an hour
+    var best = null, bd = 3600000;
+    (series || []).forEach(function (p) { var d = Math.abs(p.t - t); if (d < bd) { bd = d; best = p; } });
+    return best ? best.v : null;
+  }
+  function renderOutsideTile(avgHouse) {
+    var o = outsideNow();
+    if (!o) { return '<div class="stat" title="' + esc(wx.err || 'Fetching the weather for the farm…') + '"><div class="k">Outside air</div><div class="v num">—<small>' + (wx.err ? 'weather unavailable' : 'loading…') + '</small></div></div>'; }
+    var bits = [];
+    if (avgHouse != null) { var d = avgHouse - o.temp; bits.push('houses ' + (Math.abs(d) < 0.5 ? 'about the same' : (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + '° ' + (d > 0 ? 'warmer' : 'cooler'))); }
+    if (o.rh != null) { bits.push(Math.round(o.rh) + '% humidity'); }
+    if (o.feels != null && Math.abs(o.feels - o.temp) >= 3) { bits.push('feels like ' + fmtTemp(o.feels) + '°'); }
+    return '<div class="stat" title="' + esc('Outside air ' + o.srcLabel + ' · as of ' + fmtClock(o.t) + (o.wind != null ? ' · wind ' + Math.round(o.wind) + ' mph' : '')) + '"><div class="k">Outside air</div>' +
+      '<div class="v num" style="color:var(--outside)">' + esc(fmtTemp(o.temp)) + '<small>°F</small>' + (bits.length ? '<small class="wx">' + esc(bits.join(' · ')) + '</small>' : '') + '</div></div>';
+  }
+
+  // ---------- the unit's connection as a tappable input, and the automatic offline log ----------
+  // Sensaphone.net says whether it can reach the unit; this page checks that every minute while open. An offline stretch is written
+  // to the Sensor log by itself (kind "Offline") the moment it is first seen, and closed when the unit is back. If nobody had the page
+  // open when it came back, the entry is closed at the last check and says so, rather than guessing.
+  function connZid(dev) { return 'unit:' + dev.device_id; }
+  function devOffline(dev) { return dev.is_online === false || /offline/i.test(dev.connection_status || ''); }
+  function connZone(dev) {
+    var off = devOffline(dev);
+    return { zone_id: connZid(dev), name: dev.name + ' monitor unit · connection', canonical: '', cat: 'conn', house: null, catLabel: 'Connection',
+      value: off ? 'Offline' : 'Online', units: '', legend: '', low: null, high: null, sev: off ? 'crit' : 'good', status: off ? 'Offline' : 'OK',
+      condition: '', current: '', unack: false, dashAlarm: false, enabled: true, alarmEnabled: true, isOutput: false, running: false, type: '' };
+  }
+  var AUTO_SEEN_KEY = 'apco.autoseen.v1';
+  var autoSeenAt = (function () { try { return num(localStorage.getItem(AUTO_SEEN_KEY)) || 0; } catch (e) { return 0; } })();
+  var autoChanged = false;
+  function autoLog(key, zid, label, house, cat, isOff, text) {
+    var now = Date.now();
+    var open = LOG.entries.filter(function (e) { return e.auto === key && e.open; })[0];
+    if (open && autoSeenAt && now - autoSeenAt > 15 * 60000) {   // the page was closed or asleep: the stretch ended at an unknown time
+      open.open = false; open.to = Math.max(open.from, autoSeenAt); open.updated = now;
+      open.text = open.text.replace(/\s*\(end time unknown[^)]*\)$/, '') + ' (end time unknown — nobody had the page open after ' + fmtStamp(autoSeenAt) + ')';
+      open = null; autoChanged = true;
+    }
+    if (isOff && !open) {
+      var e = cleanEntry({ id: key.replace(':', '-') + '-' + Math.round(now / 300000), zid: zid, label: label, zname: label, house: house, cat: cat, kind: 'offline', from: now, to: null, open: true, text: text, by: '', auto: key, created: now, updated: now });
+      if (e && !LOG.entries.some(function (x) { return x.id === e.id; })) { LOG.entries.push(e); autoChanged = true; }
+    } else if (!isOff && open) {
+      open.open = false; open.to = now; open.updated = now; autoChanged = true;
+    }
+  }
+  function autoLogSeen() {   // once per live render: remember when we last looked, and save whatever autoLog changed
+    autoSeenAt = Date.now();
+    try { localStorage.setItem(AUTO_SEEN_KEY, String(autoSeenAt)); } catch (e) {}
+    if (autoChanged) { autoChanged = false; saveLog(); if (sheet.z && !$('sheetBg').hidden) { renderSheetLog(); } }
+  }
+  function offlineSummary(key, windowMs) {   // -> {n, ms}: offline stretches this page logged for a subject inside the window
+    var now = Date.now(), t0 = now - windowMs, n = 0, ms = 0;
+    allEntries().forEach(function (e) {
+      if (e.auto !== key || e.kind !== 'offline') { return; }
+      var b = e.open ? now : (e.to != null ? e.to : e.from);
+      if (b < t0) { return; }
+      n++; ms += b - Math.max(e.from, t0);
+    });
+    return { n: n, ms: ms };
+  }
 
   // ---------- sample snapshot (what the page shows before sign-in) ----------
   function renderSample() {
@@ -3150,6 +3410,8 @@
     paintTheme();
     importFlockHash();
     renderSample();
+    wxTick();
+    sharedTick();
     var saved = store.get();
     if (saved && saved.acctid && saved.session) {
       auth = saved;

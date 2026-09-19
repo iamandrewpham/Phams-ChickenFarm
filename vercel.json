@@ -1,0 +1,10 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "data": false
+    }
+  },
+  "redirects": [
+    { "source": "/phams-chickens-monitor", "destination": "/", "permanent": true }
+  ]
+}
