@@ -679,20 +679,6 @@
   </div>
 </div>
 
-<div class="sheet-bg" id="camBg" hidden>
-  <div class="sheet cam-sheet" role="dialog" aria-modal="true" aria-labelledby="camTitle">
-    <header>
-      <div><h2 id="camTitle">Live camera</h2><div class="sub" id="camSub">UniFi Protect live view</div></div>
-      <button class="btn quiet" type="button" id="camClose">Close ✕</button>
-    </header>
-    <div class="camframe" id="camFrame"></div>
-    <div class="cam-foot">
-      <span>The stream stops when you close this, so it doesn't use data in the background.</span>
-      <a id="camOpen" href="#" target="_blank" rel="noopener">Open in its own tab ↗</a>
-    </div>
-  </div>
-</div>
-
 <div class="gate" id="gate" hidden>
   <form class="card" id="loginForm" autocomplete="on">
     <h2>Sign in to Sensaphone.net</h2>
@@ -845,10 +831,10 @@
   var LS_KEY = 'apco.sensaphone.auth.v1';
   var POLL_MS = 60 * 1000;
 
-  // Live camera per house: UniFi Protect → camera → Share Livestream → copy link.
-  // Add more houses as  2: 'https://monitor.ui.com/…',
+  // Live camera per house: the YouTube video ID of that house's live stream
+  // (the part after youtube.com/embed/ or watch?v=). Add more as  2: 'VIDEO_ID',
   var CAMERAS = {
-    1: 'https://monitor.ui.com/88228a71-a1a3-4df8-ba4b-91c1889df5de'
+    1: '-0Jkr0eQ6yQ'
   };
   var RENEW_AFTER_MS = 6 * 60 * 60 * 1000;   // renew the 24h session after 6h of age
   var CATS = [
@@ -1867,15 +1853,12 @@
         '<span class="k">' + esc(z.catLabel) + '</span>' +
         '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(show) + '</span>' + (lp ? '<div class="lp">' + lp + '</div>' : '') + '</li>';
     }).join('') + (anyRows ? renderAxis() : '');
-    var camBtn = CAMERAS[h.n]
-      ? '<button class="btn cam-btn" type="button" data-cam="' + h.n + '" aria-label="Live camera for House ' + h.n + '">' +
-        '<span class="live" aria-hidden="true"></span>' +
-        '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 7l4-2.2v6.4l-4-2.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>' +
-        'Live</button>'
-      : '';
+    // Placeholder only: setHouses() fills it with the player once and keeps it across refreshes
+    var camSlot = CAMERAS[h.n] ? '<div class="cam-slot" data-cam="' + h.n + '"></div>' : '';
     return '<article class="house ' + h.sev + '" id="house-' + h.n + '">' +
-      '<header><h2>House ' + h.n + '</h2><div class="hd-r">' + camBtn +
+      '<header><h2>House ' + h.n + '</h2><div class="hd-r">' +
       '<span class="chip ' + h.sev + '"><span class="i">' + sevIcon(h.sev) + '</span>' + esc(sevWord(h.sev)) + '</span></div></header>' +
+      camSlot +
       tempHtml +
       (inputs ? '<ul class="inputs">' + inputs + '</ul>' : '') +
       '</article>';
@@ -2033,7 +2016,7 @@
     $('housesHead').innerHTML = allHouses.length
       ? 'Houses · tap any reading for its history<span class="key">Strips show the last 24 h: <i style="background:' + STRIP_COL.ok + '"></i>normal <i style="background:' + STRIP_COL.run + '"></i>feed/fill line running <i style="background:' + STRIP_COL.on + '"></i>stopped, off or over the limit <i style="background:' + STRIP_COL.quiet + '"></i>no alarm logged <i style="background:' + STRIP_COL.unk + '"></i>no record</span>'
       : 'No houses found';
-    $('houses').innerHTML = housesHtml.join('') || '<div class="empty">No zone names contain a house number yet. Name zones like "Temp house 1" on Sensaphone.net and they will show up here.</div>';
+    setHouses(housesHtml.join('') || '<div class="empty">No zone names contain a house number yet. Name zones like "Temp house 1" on Sensaphone.net and they will show up here.</div>');
     $('flockBar').innerHTML = allHouses.length ? renderFlockBar(allHouses) : '';
 
     // unit
@@ -2645,42 +2628,74 @@
       if (ev.target.getAttribute('data-zid')) { ev.preventDefault(); openSheet(ev.target.getAttribute('data-zid')); }
     }
   });
-  // ---------- live camera ----------
-  var camReturn = null;
-  function openCam(n) {
-    var url = CAMERAS[n];
-    if (!url) { return; }
-    camReturn = document.activeElement;
-    $('camTitle').textContent = 'House ' + n + ' · Live';
-    $('camOpen').href = url;
-    var frame = $('camFrame');
-    frame.innerHTML = '<div class="msg">Connecting to camera…</div>';
+  // ---------- live camera (YouTube) in the house card ----------
+  function camPlayer(n) {
+    var id = CAMERAS[n];
+    var box = document.createElement('div');
+    box.className = 'cam-live';
+    box.setAttribute('data-cam-live', n);
+    box.innerHTML = '<span class="tag">LIVE</span>';
     var ifr = document.createElement('iframe');
-    ifr.src = url;
+    ifr.src = 'https://www.youtube.com/embed/' + encodeURIComponent(id) +
+      '?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1';
     ifr.title = 'House ' + n + ' live camera';
-    ifr.allow = 'autoplay; fullscreen; picture-in-picture';
+    ifr.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    ifr.referrerPolicy = 'strict-origin-when-cross-origin';
     ifr.setAttribute('allowfullscreen', '');
-    ifr.addEventListener('load', function () { var m = frame.querySelector('.msg'); if (m) { m.remove(); } });
-    frame.appendChild(ifr);
-    $('camBg').hidden = false;
-    document.body.style.overflow = 'hidden';
-    $('camClose').focus();
+    box.appendChild(ifr);
+    return box;
   }
-  function closeCam() {
-    $('camFrame').innerHTML = '';          // removing the iframe ends the stream
-    $('camBg').hidden = true;
-    document.body.style.overflow = '';
-    if (camReturn && camReturn.focus) { try { camReturn.focus(); } catch (e) {} }
+
+  // Swap in freshly rendered house cards WITHOUT reloading any camera that's already
+  // playing: a card with a live player keeps its element and only its other parts are
+  // replaced (moving or re-creating an iframe would restart the video every refresh).
+  function setHouses(html) {
+    var host = $('houses');
+    var tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    var kept = {};
+    Array.prototype.forEach.call(host.querySelectorAll('[data-cam-live]'), function (p) { kept[p.getAttribute('data-cam-live')] = p; });
+    var keepArts = [];
+    Object.keys(kept).forEach(function (n) {
+      var player = kept[n], oldArt = player.parentNode;
+      var slot = tpl.content.querySelector('.cam-slot[data-cam="' + n + '"]');
+      var newArt = slot && slot.parentNode;
+      if (!slot || !oldArt || oldArt.parentNode !== host || !newArt || newArt.parentNode !== tpl.content) { return; }
+      oldArt.className = newArt.className;
+      Array.prototype.slice.call(oldArt.childNodes).forEach(function (c) { if (c !== player) { oldArt.removeChild(c); } });
+      var before = true;
+      Array.prototype.slice.call(newArt.childNodes).forEach(function (c) {
+        if (c === slot) { before = false; return; }
+        if (before) { oldArt.insertBefore(c, player); } else { oldArt.appendChild(c); }
+      });
+      tpl.content.replaceChild(document.createComment('cam-' + n), newArt);
+      keepArts.push({ n: n, art: oldArt });
+    });
+    // Everything except the kept cards is replaced; the kept cards stay put in their new order
+    Array.prototype.slice.call(host.childNodes).forEach(function (c) {
+      if (!keepArts.some(function (k) { return k.art === c; })) { host.removeChild(c); }
+    });
+    var anchor = null;
+    Array.prototype.slice.call(tpl.content.childNodes).reverse().forEach(function (c) {
+      var k = c.nodeType === 8 && keepArts.filter(function (x) { return 'cam-' + x.n === c.nodeValue; })[0];
+      var node = k ? k.art : c;
+      if (k && node.nextSibling === anchor && node.parentNode === host) { anchor = node; return; }
+      host.insertBefore(node, anchor);   // only non-camera nodes ever move here in practice
+      anchor = node;
+    });
+    // First time a camera card appears: put a player in its slot
+    Array.prototype.forEach.call(host.querySelectorAll('.cam-slot'), function (slot) {
+      slot.parentNode.replaceChild(camPlayer(slot.getAttribute('data-cam')), slot);
+    });
   }
-  document.addEventListener('click', function (ev) {
-    var b = ev.target.closest ? ev.target.closest('[data-cam]') : null;
-    if (b) { ev.preventDefault(); ev.stopPropagation(); openCam(b.getAttribute('data-cam')); }
-  });
-  document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape' && !$('camBg').hidden) { closeCam(); }
-  });
-  $('camClose').addEventListener('click', closeCam);
-  $('camBg').addEventListener('click', function (ev) { if (ev.target === $('camBg')) { closeCam(); } });
+
+  // Pause the players while the tab is in the background, so phones don't keep streaming
+  function camCommand(func) {
+    Array.prototype.forEach.call(document.querySelectorAll('.cam-live iframe'), function (f) {
+      try { f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), '*'); } catch (e) {}
+    });
+  }
+  document.addEventListener('visibilitychange', function () { camCommand(document.hidden ? 'pauseVideo' : 'playVideo'); });
 
   $('shClose').addEventListener('click', closeSheet);
   $('sheetBg').addEventListener('click', function (ev) { if (ev.target === $('sheetBg')) { closeSheet(); } });
