@@ -284,6 +284,18 @@
   .house.warn { border-left-color: var(--warn); }
   .house.crit { border-left-color: var(--crit); }
   .house header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .house header .hd-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .cam-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 11px; font-size: 13px; border-radius: 999px; }
+  .cam-btn svg { flex: none; }
+  .cam-btn .live { width: 7px; height: 7px; border-radius: 50%; background: var(--crit); }
+
+  /* ---------- live camera sheet ---------- */
+  .cam-sheet { max-width: 1100px; }
+  .camframe { position: relative; width: 100%; aspect-ratio: 16 / 10.5; max-height: 72vh; background: #000; border-radius: 10px; overflow: hidden; }
+  .camframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .camframe .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #ddd; font-size: 14px; }
+  .cam-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--ink-3); }
+  .cam-foot a { font-weight: 600; }
   .house h2 { font-size: 28px; letter-spacing: 0.01em; }
   .house h2 small { display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
   .chip {
@@ -673,6 +685,20 @@
   </div>
 </div>
 
+<div class="sheet-bg" id="camBg" hidden>
+  <div class="sheet cam-sheet" role="dialog" aria-modal="true" aria-labelledby="camTitle">
+    <header>
+      <div><h2 id="camTitle">Live camera</h2><div class="sub" id="camSub">UniFi Protect live view</div></div>
+      <button class="btn quiet" type="button" id="camClose">Close ✕</button>
+    </header>
+    <div class="camframe" id="camFrame"></div>
+    <div class="cam-foot">
+      <span>The stream stops when you close this, so it doesn't use data in the background.</span>
+      <a id="camOpen" href="#" target="_blank" rel="noopener">Open in its own tab ↗</a>
+    </div>
+  </div>
+</div>
+
 <div class="gate" id="gate" hidden>
   <form class="card" id="loginForm" autocomplete="on">
     <h2>Sign in to Sensaphone.net</h2>
@@ -824,6 +850,12 @@
   var API = 'https://rest.sensaphone.net/api/v1';
   var LS_KEY = 'apco.sensaphone.auth.v1';
   var POLL_MS = 60 * 1000;
+
+  // Live camera per house: UniFi Protect → camera → Share Livestream → copy link.
+  // Add more houses as  2: 'https://monitor.ui.com/…',
+  var CAMERAS = {
+    1: 'https://monitor.ui.com/88228a71-a1a3-4df8-ba4b-91c1889df5de'
+  };
   var RENEW_AFTER_MS = 6 * 60 * 60 * 1000;   // renew the 24h session after 6h of age
   var CATS = [
     { key: 'temp',       re: /^temp/i,         label: 'Temp' },
@@ -1841,9 +1873,15 @@
         '<span class="k">' + esc(z.catLabel) + '</span>' +
         '<span class="v"><span class="i">' + sevIcon(z.sev) + '</span>' + esc(show) + '</span>' + (lp ? '<div class="lp">' + lp + '</div>' : '') + '</li>';
     }).join('') + (anyRows ? renderAxis() : '');
+    var camBtn = CAMERAS[h.n]
+      ? '<button class="btn cam-btn" type="button" data-cam="' + h.n + '" aria-label="Live camera for House ' + h.n + '">' +
+        '<span class="live" aria-hidden="true"></span>' +
+        '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 7l4-2.2v6.4l-4-2.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>' +
+        'Live</button>'
+      : '';
     return '<article class="house ' + h.sev + '" id="house-' + h.n + '">' +
-      '<header><h2>House ' + h.n + '</h2>' +
-      '<span class="chip ' + h.sev + '"><span class="i">' + sevIcon(h.sev) + '</span>' + esc(sevWord(h.sev)) + '</span></header>' +
+      '<header><h2>House ' + h.n + '</h2><div class="hd-r">' + camBtn +
+      '<span class="chip ' + h.sev + '"><span class="i">' + sevIcon(h.sev) + '</span>' + esc(sevWord(h.sev)) + '</span></div></header>' +
       tempHtml +
       (inputs ? '<ul class="inputs">' + inputs + '</ul>' : '') +
       '</article>';
@@ -2613,6 +2651,43 @@
       if (ev.target.getAttribute('data-zid')) { ev.preventDefault(); openSheet(ev.target.getAttribute('data-zid')); }
     }
   });
+  // ---------- live camera ----------
+  var camReturn = null;
+  function openCam(n) {
+    var url = CAMERAS[n];
+    if (!url) { return; }
+    camReturn = document.activeElement;
+    $('camTitle').textContent = 'House ' + n + ' · Live';
+    $('camOpen').href = url;
+    var frame = $('camFrame');
+    frame.innerHTML = '<div class="msg">Connecting to camera…</div>';
+    var ifr = document.createElement('iframe');
+    ifr.src = url;
+    ifr.title = 'House ' + n + ' live camera';
+    ifr.allow = 'autoplay; fullscreen; picture-in-picture';
+    ifr.setAttribute('allowfullscreen', '');
+    ifr.addEventListener('load', function () { var m = frame.querySelector('.msg'); if (m) { m.remove(); } });
+    frame.appendChild(ifr);
+    $('camBg').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('camClose').focus();
+  }
+  function closeCam() {
+    $('camFrame').innerHTML = '';          // removing the iframe ends the stream
+    $('camBg').hidden = true;
+    document.body.style.overflow = '';
+    if (camReturn && camReturn.focus) { try { camReturn.focus(); } catch (e) {} }
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('[data-cam]') : null;
+    if (b) { ev.preventDefault(); ev.stopPropagation(); openCam(b.getAttribute('data-cam')); }
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('camBg').hidden) { closeCam(); }
+  });
+  $('camClose').addEventListener('click', closeCam);
+  $('camBg').addEventListener('click', function (ev) { if (ev.target === $('camBg')) { closeCam(); } });
+
   $('shClose').addEventListener('click', closeSheet);
   $('sheetBg').addEventListener('click', function (ev) { if (ev.target === $('sheetBg')) { closeSheet(); } });
   $('shRanges').addEventListener('click', function (ev) {
